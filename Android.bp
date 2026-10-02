@@ -23992,3 +23992,27 @@ install_symlink {
     installed_location: "lib64/libq3dtools_adreno.so",
     symlink_target: "/vendor/lib64/egl/libq3dtools_adreno.so",
 }
+
+android_app_import {
+    name: "OsloFeedback",
+    owner: "google",
+    apk: "proprietary/system_ext/priv-app/OsloFeedback/OsloFeedback.apk",
+    certificate: "platform",
+    dex_preopt: {
+        enabled: false,
+    },
+    privileged: true,
+    system_ext_specific: true,
+}
+
+android_app_import {
+    name: "MotionSenseBridgePrebuilt",
+    owner: "google",
+    apk: "proprietary/product/app/MotionSenseBridgePrebuilt/MotionSenseBridgePrebuilt.apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}

@@ -72,6 +72,8 @@ PRODUCT_PACKAGES += \
     PixelCameraServicesCoral \
     VZWAPNLib \
     uimremoteclient \
+    OsloFeedback \
+    MotionSenseBridgePrebuilt \
     uimremoteserver \
     AmbientSensePrebuilt \
     AppDirectedSMSService \
