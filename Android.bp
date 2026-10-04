@@ -434,6 +434,31 @@ cc_prebuilt_library_shared {
     system_ext_specific: true,
 }
 
+// Stock Pixel 4 Google Camera, from the coral TP1A.221005.002.B2 product image.
+// GitHub rejects files over 100 MB, so the APK is stored in two parts and
+// joined back into the original, byte for byte, at build time.
+genrule {
+    name: "GoogleCamera_apk",
+    srcs: [
+        "proprietary/product/app/GoogleCamera/GoogleCamera.apk.part-aa",
+        "proprietary/product/app/GoogleCamera/GoogleCamera.apk.part-ab",
+    ],
+    out: ["GoogleCamera.apk"],
+    cmd: "cat $(in) > $(out)",
+}
+
+android_app_import {
+    name: "GoogleCamera",
+    owner: "google",
+    apk: ":GoogleCamera_apk",
+    preprocessed: true,
+    presigned: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}
+
 android_app_import {
     name: "PixelCameraServicesCoral",
     owner: "google",

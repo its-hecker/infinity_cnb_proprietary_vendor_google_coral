@@ -6,6 +6,7 @@ PRODUCT_SOONG_NAMESPACES += \
     vendor/google/coral
 
 PRODUCT_COPY_FILES += \
+    vendor/google/coral/proprietary/product/app/GoogleCamera/PortSegm-precomp.unenc:$(TARGET_COPY_OUT_PRODUCT)/app/GoogleCamera/PortSegm-precomp.unenc \
     vendor/google/coral/proprietary/product/etc/ambient/matcher_tah.leveldb:$(TARGET_COPY_OUT_PRODUCT)/etc/ambient/matcher_tah.leveldb \
     vendor/google/coral/proprietary/product/etc/felica/common.cfg:$(TARGET_COPY_OUT_PRODUCT)/etc/felica/common.cfg \
     vendor/google/coral/proprietary/product/etc/felica/mfm.cfg:$(TARGET_COPY_OUT_PRODUCT)/etc/felica/mfm.cfg \
@@ -69,6 +70,7 @@ PRODUCT_PACKAGES += \
     vendor.qti.diaghal@1.0 \
     vendor.qti.hardware.tui_comm@1.0 \
     vendor.qti.imsrtpservice@3.0 \
+    GoogleCamera \
     PixelCameraServicesCoral \
     VZWAPNLib \
     uimremoteclient \
