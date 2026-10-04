@@ -434,21 +434,6 @@ cc_prebuilt_library_shared {
     system_ext_specific: true,
 }
 
-// Pixel live wallpapers, including Pokemon Sidekick, from the SoliEnablerPokemon
-// module. The base APK and its splits are merged into one APK (apps on the system
-// image can't be installed from splits by the build), with native libraries loaded
-// from the APK. Signed with the build's own key, so it gets no platform permissions.
-android_app_import {
-    name: "PixelLiveWallpaper",
-    owner: "google",
-    apk: "proprietary/product/app/PixelLiveWallpaper/PixelLiveWallpaper.apk",
-    default_dev_cert: true,
-    dex_preopt: {
-        enabled: false,
-    },
-    product_specific: true,
-}
-
 android_app_import {
     name: "PixelCameraServicesCoral",
     owner: "google",

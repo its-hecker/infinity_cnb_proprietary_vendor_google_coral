@@ -69,7 +69,6 @@ PRODUCT_PACKAGES += \
     vendor.qti.diaghal@1.0 \
     vendor.qti.hardware.tui_comm@1.0 \
     vendor.qti.imsrtpservice@3.0 \
-    PixelLiveWallpaper \
     PixelCameraServicesCoral \
     VZWAPNLib \
     uimremoteclient \
