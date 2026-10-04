@@ -458,7 +458,6 @@ PRODUCT_COPY_FILES += \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.camera.provider@2.7-service-google.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.camera.provider@2.7-service-google.rc \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.confirmationui@1.0-service-google.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.confirmationui@1.0-service-google.rc \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.drm-service.widevine.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.drm-service.widevine.rc \
-    vendor/google/coral/proprietary/vendor/etc/init/android.hardware.biometrics.face@1.0-service.google.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.biometrics.face@1.0-service.google.rc \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.gatekeeper@1.0-service-qti.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.gatekeeper@1.0-service-qti.rc \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.identity@1.0-service.citadel.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.identity@1.0-service.citadel.rc \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.input.processor-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.input.processor-service.rc \
@@ -1472,7 +1471,6 @@ PRODUCT_PACKAGES += \
     android.hardware.weaver@1.0-service.citadel.xml \
     manifest_android.hardware.drm-service.widevine.xml \
     manifest_input.processor-service.xml \
-    manifest_face.xml \
     rebootescrow-citadel.xml \
     vendor.google.wireless_charger@1.3-service-vendor.xml \
     PktRspTest \
@@ -1506,7 +1504,6 @@ PRODUCT_PACKAGES += \
     citadeld \
     init_citadel \
     qcrild \
-    android.hardware.biometrics.face@1.0-service.google \
     vendor.google.airbrush@1.0-service \
     vendor.google.radioext@1.0-service \
     vendor.google.wireless_charger@1.3-service-vendor \
