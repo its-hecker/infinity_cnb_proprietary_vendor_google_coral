@@ -71,6 +71,7 @@ PRODUCT_PACKAGES += \
     vendor.qti.hardware.tui_comm@1.0 \
     vendor.qti.imsrtpservice@3.0 \
     GoogleCamera \
+    PixelLiveWallpaper \
     PixelCameraServicesCoral \
     VZWAPNLib \
     uimremoteclient \

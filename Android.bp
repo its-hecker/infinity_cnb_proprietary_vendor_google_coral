@@ -434,6 +434,21 @@ cc_prebuilt_library_shared {
     system_ext_specific: true,
 }
 
+// Pixel live wallpapers, including Pokemon Sidekick, from the SoliEnablerPokemon
+// module. The base APK and its splits are merged into one APK (apps on the system
+// image can't be installed from splits by the build), with native libraries loaded
+// from the APK. Signed with the build's own key, so it gets no platform permissions.
+android_app_import {
+    name: "PixelLiveWallpaper",
+    owner: "google",
+    apk: "proprietary/product/app/PixelLiveWallpaper/PixelLiveWallpaper.apk",
+    default_dev_cert: true,
+    dex_preopt: {
+        enabled: false,
+    },
+    product_specific: true,
+}
+
 // Stock Pixel 4 Google Camera, from the coral TP1A.221005.002.B2 product image.
 // GitHub rejects files over 100 MB, so the APK is stored in two parts and
 // joined back into the original, byte for byte, at build time.
