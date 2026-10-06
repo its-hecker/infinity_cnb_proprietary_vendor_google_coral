@@ -24066,6 +24066,7 @@ cc_prebuilt_binary {
         none: true,
     },
     prefer: true,
+    relative_install_path: "hw",
     soc_specific: true,
 }
 
