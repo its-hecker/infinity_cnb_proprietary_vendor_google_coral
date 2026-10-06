@@ -24016,3 +24016,64 @@ android_app_import {
     },
     product_specific: true,
 }
+
+cc_prebuilt_binary {
+    name: "android.hardware.biometrics.face@1.0-service.google",
+    owner: "google",
+    target: {
+        android_arm64: {
+            srcs: [
+                "proprietary/vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google",
+            ],
+            shared_libs: [
+                "libairbrush-pixel",
+                "libbase-v33",
+                "libbinder_ndk",
+                "libface-calibration-proto",
+                "libface-enroll-proto",
+                "libfaceauth-util",
+                "libhidlbase",
+                "libion",
+                "libkeymaster4_1support",
+                "liblog",
+                "libnos",
+                "libnos_citadeld_proxy",
+                "libnos_client_citadel",
+                "libpng",
+                "libprotobuf-cpp-full-3.9.1-vendorcompat",
+                "libutils",
+                "android.frameworks.stats-V1-ndk",
+                "android.hardware.biometrics.face@1.0",
+                "android.hardware.keymaster@4.1",
+                "android.hardware.thermal@2.0",
+                "libcamera2ndk_vendor",
+                "libbinder",
+                "libstagefright_foundation",
+                "libcutils",
+                "libcamera_metadata",
+                "libmediandk",
+                "libnativewindow",
+                "libc++",
+                "libc",
+                "libm",
+                "libdl",
+            ],
+        },
+    },
+    compile_multilib: "64",
+    check_elf_files: false,
+    strip: {
+        none: true,
+    },
+    prefer: true,
+    soc_specific: true,
+}
+
+prebuilt_etc_xml {
+    name: "manifest_face.xml",
+    owner: "google",
+    src: "proprietary/vendor/etc/vintf/manifest/manifest_face.xml",
+    filename_from_src: true,
+    sub_dir: "vintf/manifest",
+    soc_specific: true,
+}
