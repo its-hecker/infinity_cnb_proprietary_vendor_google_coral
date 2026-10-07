@@ -1,4 +1,7 @@
 service vendor.face-hal-1-0 /vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google
+    # The stock Android 13 face HAL expects the v33 vendor Camera NDK ABI.
+    # Keep that ABI private to this process; the rest of Android 17 uses the current library.
+    setenv LD_LIBRARY_PATH /vendor/lib64/facecompat:/vendor/lib64
     # Using "class hal" may cause a race condition on some devices because this
     # HAL needs to write to files created in /data. As a workaround, we postpone
     # startup of the HAL until later in the boot sequence, once /data has
