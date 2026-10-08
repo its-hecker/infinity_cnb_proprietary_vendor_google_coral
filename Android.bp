@@ -24005,12 +24005,15 @@ android_app_import {
     system_ext_specific: true,
 }
 
+// Full Motion Sense Bridge implementation. The factory-image Prebuilt APK is only a stub
+// (no classes.dex), which leaves Pokémon Wave Hello's OsloUnityPlugin with no service to bind.
+// This compatibility build removes the original app whitelist; platform signing grants the
+// restricted Oslo provider permission used to talk to com.google.oslo.service.OsloService.
 android_app_import {
     name: "MotionSenseBridgePrebuilt",
     owner: "google",
-    apk: "proprietary/product/app/MotionSenseBridgePrebuilt/MotionSenseBridgePrebuilt.apk",
-    preprocessed: true,
-    presigned: true,
+    apk: "proprietary/product/app/MotionSenseBridge/MotionSenseBridge.apk",
+    certificate: "platform",
     dex_preopt: {
         enabled: false,
     },
