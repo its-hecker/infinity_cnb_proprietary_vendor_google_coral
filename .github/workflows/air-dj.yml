@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: its-hecker/infinity_OsloFeedback
-          ref: bbba9641f2ff2c886edae6ba35c5af5b0ee1aa8f
+          ref: 2d44a113b48628ddca32325b416e70377ab27828
           path: airdj-source
       - uses: actions/setup-java@v5
         with:
@@ -60,7 +60,7 @@ jobs:
           APK=proprietary/system_ext/priv-app/OsloFeedback/OsloFeedback.apk
           cp "$RUNNER_TEMP/OsloFeedback-AirDJ-validation.apk" "$APK"
           printf 'Air DJ source: %s\nAPK SHA256: %s\n' \
-            bbba9641f2ff2c886edae6ba35c5af5b0ee1aa8f \
+            2d44a113b48628ddca32325b416e70377ab27828 \
             "$(sha256sum "$APK" | cut -d ' ' -f 1)" > tools/air-dj-build.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
