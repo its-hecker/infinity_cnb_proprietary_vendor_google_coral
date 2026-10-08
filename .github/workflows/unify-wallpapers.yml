@@ -90,6 +90,12 @@ jobs:
           rootProject.name = "SidekickPayload"
           EOF
 
+          cat > work/payload/gradle.properties <<'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=false
+          org.gradle.jvmargs=-Xmx3g
+          EOF
+
           cat > work/payload/build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.7.3'
