@@ -13,6 +13,7 @@ ET.register_namespace("android", ANDROID)
 
 SERVICE = "com.hecker.motionsense.wallpapers.UnifiedSidekickWallpaper"
 PERMISSION = "android.permission.STATUS_BAR_SERVICE"
+EXPECTED_PACKAGE = "com.google.pixel.livewallpaper"
 
 
 def a(name: str) -> str:
@@ -28,6 +29,14 @@ def main() -> None:
     manifest_path = args.decoded / "AndroidManifest.xml"
     tree = ET.parse(manifest_path)
     root = tree.getroot()
+
+    package_name = root.get("package")
+    if package_name != EXPECTED_PACKAGE:
+        raise RuntimeError(
+            "Unexpected PixelLiveWallpaper package %r (expected %r); "
+            "refusing to inject into an unknown upstream layout"
+            % (package_name, EXPECTED_PACKAGE)
+        )
 
     if not any(x.get(a("name")) == PERMISSION for x in root.findall("uses-permission")):
         perm = ET.Element("uses-permission")
