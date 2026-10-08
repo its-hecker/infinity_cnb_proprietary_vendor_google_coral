@@ -1,0 +1,2 @@
+Air DJ source: bbba9641f2ff2c886edae6ba35c5af5b0ee1aa8f
+APK SHA256: 7128bc7fe6aa8dc0edc60d9a8eb36096efc82e1c1fdc82fcfb6f5f4e7af8ca05
