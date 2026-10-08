@@ -1,2 +1,2 @@
-Motion Lab + Air DJ source: c13fc950803ece4a796ebbd09bbe83deaa8da480
-APK SHA256: 838858ecbf82221a06ecfe23fd5b2c07954112d49de5b331e501509eb4f4c2ff
+Motion Lab + Air DJ + Album Art Glow source: 1ef713fca6ff1a37ff2461613238d6607d7aa554
+APK SHA256: 5f8c1ec97fe101966e43fc151b8531f8842ffa6b7960350b9291f13ffa02bb56
