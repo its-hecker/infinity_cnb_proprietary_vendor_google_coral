@@ -1,8 +1,14 @@
 Pokemon environment enhancement report
 Policy: exact environment allowlist only; Pokemon character/model textures untouched.
-AssetBundles scanned: 6
-Unsplit .assets scanned: 0
-Split sharedassets groups scanned: 3
-RESTORE work/decoded/assets/bin/Data/sharedassets1.assets: RuntimeError('Unpacking failed')
+Method: load complete decoded APK tree; preserve texture format/mips; validate and rollback.
+TARGET RainStar path_id=33 owner=sharedassets1.assets format=65 mips=10 size=512x512
+TARGET WaterDropParticle path_id=35 owner=sharedassets1.assets format=65 mips=8 size=128x128
+TARGET cloudC2 path_id=38 owner=sharedassets1.assets format=65 mips=11 size=1024x512
+TARGET cloudC_light path_id=42 owner=sharedassets1.assets format=65 mips=11 size=1024x512
+TARGET Sun pokemon path_id=47 owner=sharedassets1.assets format=64 mips=1 size=1024x1024
+TARGET stars_twinkly path_id=54 owner=sharedassets1.assets format=65 mips=1 size=1024x1024
+TARGET WaterMistParticle path_id=58 owner=sharedassets1.assets format=47 mips=1 size=128x128
+WRITE /home/runner/work/infinity_cnb_proprietary_vendor_google_coral/infinity_cnb_proprietary_vendor_google_coral/work/decoded/assets/bin/Data/sharedassets1.assets bytes=6684136 sha256 b8e211bea9fa -> b3b35e9a5596
+ROLLBACK: RuntimeError('Unpacking failed')
 Environment textures enhanced: 0
-NOTE: no allowlisted environment texture could be safely rebuilt; the original Google Pokemon wallpaper assets remain intact.
+Validation: FAIL; original Unity bytes restored
