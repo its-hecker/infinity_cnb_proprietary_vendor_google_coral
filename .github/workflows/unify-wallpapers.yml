@@ -135,8 +135,11 @@ jobs:
           (
             cd work/payload
             gradle --no-daemon :assembleRelease
+            PAYLOAD_APK="$(find build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+            test -n "$PAYLOAD_APK"
+            cp "$PAYLOAD_APK" ../payload-release.apk
           )
-          test -f work/payload/build/outputs/apk/release/payload-release-unsigned.apk
+          test -s work/payload-release.apk
 
       - name: Download apktool
         run: |
@@ -168,7 +171,7 @@ jobs:
           from pathlib import Path
 
           staged = Path("work/staged.apk")
-          payload = Path("work/payload/build/outputs/apk/release/payload-release-unsigned.apk")
+          payload = Path("work/payload-release.apk")
 
           with zipfile.ZipFile(staged, "r") as z:
               names = z.namelist()
