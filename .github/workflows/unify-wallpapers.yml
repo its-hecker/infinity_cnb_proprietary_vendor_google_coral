@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/unify-wallpapers.yml"
       - "tools/unify_pixel_live_wallpaper.py"
+      - "tools/enhance_pokemon_backgrounds.py"
 
 permissions:
   contents: write
@@ -57,9 +58,13 @@ jobs:
           python3 device/MotionSenseWallpapers/tools/build_extended_packs.py \
             --source-raw device/MotionSenseWallpapers/res/raw \
             --out work/assets/sidekick
-          test "$(find work/assets/sidekick -name 'wallpaper_*.json' | wc -l)" -ge 12
+          test "$(find work/assets/sidekick -name 'wallpaper_*.json' | wc -l)" -ge 16
           python3 -m json.tool work/assets/sidekick/wallpaper_doraemon.json >/dev/null
           python3 -m json.tool work/assets/sidekick/wallpaper_batman.json >/dev/null
+          python3 -m json.tool work/assets/sidekick/wallpaper_nova.json >/dev/null
+          python3 -m json.tool work/assets/sidekick/wallpaper_kumo.json >/dev/null
+          python3 -m json.tool work/assets/sidekick/wallpaper_ember.json >/dev/null
+          python3 -m json.tool work/assets/sidekick/wallpaper_byte.json >/dev/null
 
       - name: Build resource-independent Sidekick payload
         run: |
@@ -150,13 +155,22 @@ jobs:
             https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar
           java -jar work/tools/apktool.jar --version
 
-      - name: Decode Google PixelLiveWallpaper and add Sidekick
+      - name: Decode Google PixelLiveWallpaper, enhance environments and add Sidekick
         env:
           BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
         run: |
           set -euxo pipefail
           test -s "$BASE_APK"
+          python3 -m pip install --disable-pip-version-check UnityPy Pillow
           java -jar work/tools/apktool.jar d -f -s "$BASE_APK" -o work/decoded
+
+          # Only an exact allowlist of Google environment/effect textures is touched.
+          # Pokemon character/model textures are never selected, and a bad Unity save
+          # is restored automatically instead of poisoning the wallpaper APK.
+          python3 tools/enhance_pokemon_backgrounds.py \
+            --root work/decoded \
+            --report work/pokemon-background-enhancement.txt
+
           python3 tools/unify_pixel_live_wallpaper.py \
             --decoded work/decoded \
             --assets work/assets/sidekick
@@ -231,6 +245,11 @@ jobs:
           grep -F "assets/sidekick/wallpaper_ben10.json" work/apk-contents.txt
           grep -F "assets/sidekick/wallpaper_batman.json" work/apk-contents.txt
           grep -F "assets/sidekick/wallpaper_tom_jerry.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_nova.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_kumo.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_ember.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_byte.json" work/apk-contents.txt
+          test -s work/pokemon-background-enhancement.txt
 
           "$APKS" dex packages work/UnifiedPixelLiveWallpaper.apk \
             | tee work/dex-packages.txt
@@ -307,12 +326,16 @@ jobs:
           if [ -f work/pokemon-unity-assets-report.txt ]; then
             cp work/pokemon-unity-assets-report.txt tools/pokemon-unity-assets-report.txt
           fi
+          if [ -f work/pokemon-background-enhancement.txt ]; then
+            cp work/pokemon-background-enhancement.txt tools/pokemon-background-enhancement.txt
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
-            tools/pokemon-unity-assets-report.txt || true
+            tools/pokemon-unity-assets-report.txt \
+            tools/pokemon-background-enhancement.txt || true
 
           if git diff --cached --quiet; then
             echo "No generated changes"
@@ -332,4 +355,5 @@ jobs:
             work/dex-packages.txt
             work/apk-contents.txt
             work/pokemon-unity-assets-report.txt
+            work/pokemon-background-enhancement.txt
           if-no-files-found: warn
