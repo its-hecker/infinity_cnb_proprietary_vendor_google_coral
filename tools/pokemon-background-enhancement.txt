@@ -1,5 +1,8 @@
 Pokemon environment enhancement report
-Policy: exact allowlist only; Pokemon character/model textures are untouched.
-Bundles scanned: 6
+Policy: exact environment allowlist only; Pokemon character/model textures untouched.
+AssetBundles scanned: 6
+Unsplit .assets scanned: 0
+Split sharedassets groups scanned: 3
+RESTORE work/decoded/assets/bin/Data/sharedassets1.assets: RuntimeError('Unpacking failed')
 Environment textures enhanced: 0
-NOTE: no allowlisted environment texture was writable in an addressable bundle; the original Google wallpaper remains intact.
+NOTE: no allowlisted environment texture could be safely rebuilt; the original Google Pokemon wallpaper assets remain intact.
