@@ -1,0 +1,14 @@
+Pokemon environment enhancement report
+Policy: exact environment allowlist only; Pokemon character/model textures untouched.
+Method: ETC payloads use a dedicated resS stream; split SerializedFiles are rebuilt safely.
+UnityPy: 1.25.4
+VERIFY cloudC2 path_id=38 format=47 mips=11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS pixels=1287ca5c6dd6
+VERIFY cloudC_light path_id=42 format=47 mips=11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS pixels=9357bd219866
+VERIFY RainStar path_id=33 format=47 mips=10 size=512x512 stream=sharedassets1.assets.pokemon_env.resS pixels=19229c21ad34
+VERIFY stars_twinkly path_id=54 format=47 mips=1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS pixels=230202d9c507
+VERIFY Sun pokemon path_id=47 format=34 mips=1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS pixels=3ed752ef9d9a
+VERIFY WaterDropParticle path_id=35 format=47 mips=8 size=128x128 stream=sharedassets1.assets.pokemon_env.resS pixels=33d2b311f0d1
+VERIFY WaterMistParticle path_id=58 format=47 mips=1 size=128x128 stream=sharedassets1.assets.pokemon_env.resS pixels=f6f91348ab19
+Environment textures enhanced: 7
+Mode: validate-only
+Validation: PASS (final APK Unity tree reloaded and every enhanced texture decoded)
