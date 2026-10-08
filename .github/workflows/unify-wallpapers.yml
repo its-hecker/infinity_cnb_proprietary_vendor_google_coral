@@ -9,6 +9,12 @@ on:
       - ".github/workflows/unify-wallpapers.yml"
       - "tools/unify_pixel_live_wallpaper.py"
       - "tools/enhance_pokemon_backgrounds.py"
+      - "tools/sidekick_dex.py"
+      - "tools/test_sidekick_dex.py"
+
+concurrency:
+  group: unified-wallpapers-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -32,6 +38,9 @@ jobs:
           ref: faceid
           path: device
           fetch-depth: 1
+
+      - name: Test DEX replacement
+        run: python3 -m unittest discover -s tools -p "test_sidekick_dex.py" -v
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -155,6 +164,16 @@ jobs:
             https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar
           java -jar work/tools/apktool.jar --version
 
+      - name: Isolate Sidekick AndroidX dependencies
+        run: |
+          set -euxo pipefail
+          java -jar work/tools/apktool.jar d -f -r \
+            work/payload-release.apk -o work/payload-decoded
+          python3 tools/sidekick_dex.py relocate --decoded work/payload-decoded
+          java -jar work/tools/apktool.jar b work/payload-decoded \
+            -o work/payload-isolated.apk
+          python3 tools/sidekick_dex.py validate work/payload-isolated.apk
+
       - name: Decode Google PixelLiveWallpaper, enhance environments and add Sidekick
         env:
           BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
@@ -182,55 +201,9 @@ jobs:
       - name: Inject payload dex
         run: |
           set -euxo pipefail
-          python3 - <<'PY'
-          import re
-          import zipfile
-          from pathlib import Path
-
-          staged = Path("work/staged.apk")
-          payload = Path("work/payload-release.apk")
-
-          # The repository stores the generated unified APK, so later runs start from an
-          # already-injected package. Remove the previous Sidekick dex first; otherwise
-          # every rebuild would accumulate duplicate class definitions.
-          marker = b"Lcom/hecker/motionsense/wallpapers/UnifiedSidekickWallpaper;"
-          cleaned = staged.with_name("staged-clean.apk")
-          removed = []
-          with zipfile.ZipFile(staged, "r") as zin, \
-                  zipfile.ZipFile(cleaned, "w") as zout:
-              for info in zin.infolist():
-                  blob = zin.read(info.filename)
-                  if re.fullmatch(r"classes(\\d*)\\.dex", info.filename) and marker in blob:
-                      removed.append(info.filename)
-                      continue
-                  zout.writestr(info, blob)
-          cleaned.replace(staged)
-          if removed:
-              print("Removed previous Sidekick dex:", ", ".join(removed))
-
-          with zipfile.ZipFile(staged, "r") as z:
-              names = z.namelist()
-          indices = []
-          for name in names:
-              m = re.fullmatch(r"classes(\d*)\.dex", name)
-              if m:
-                  indices.append(int(m.group(1) or "1"))
-          next_index = max(indices or [0]) + 1
-
-          with zipfile.ZipFile(payload, "r") as p:
-              dex_names = sorted(
-                  [n for n in p.namelist() if re.fullmatch(r"classes(\d*)\.dex", n)],
-                  key=lambda n: int(re.fullmatch(r"classes(\d*)\.dex", n).group(1) or "1"),
-              )
-              blobs = [(n, p.read(n)) for n in dex_names]
-
-          with zipfile.ZipFile(staged, "a", compression=zipfile.ZIP_DEFLATED) as z:
-              for _, blob in blobs:
-                  out_name = "classes%d.dex" % next_index
-                  z.writestr(out_name, blob)
-                  print("Injected", out_name)
-                  next_index += 1
-          PY
+          python3 tools/sidekick_dex.py inject \
+            --staged work/staged.apk \
+            --payload work/payload-isolated.apk
 
       - name: Align and sign validation APK
         run: |
@@ -254,6 +227,9 @@ jobs:
       - name: Validate unified package
         run: |
           set -euxo pipefail
+          python3 tools/sidekick_dex.py validate \
+            work/UnifiedPixelLiveWallpaper.apk \
+            --report work/dex-validation.txt
           APKS="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
           "$APKS" manifest print work/UnifiedPixelLiveWallpaper.apk \
             | tee work/manifest.txt
@@ -366,6 +342,16 @@ jobs:
               tools/pokemon-background-final-validation.txt
           fi
 
+          # GitHub rejects ordinary Git objects larger than 100 MiB.
+          python3 - <<'PY'
+          from pathlib import Path
+          apk = Path("proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk")
+          size = apk.stat().st_size
+          if size >= 100 * 1024 * 1024:
+              raise SystemExit(f"APK still exceeds GitHub's file limit: {size} bytes")
+          print(f"APK fits GitHub's file limit: {size} bytes")
+          PY
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
@@ -383,6 +369,7 @@ jobs:
           git push origin HEAD:faceid
 
       - name: Upload validation artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unified-pixel-live-wallpaper
@@ -390,6 +377,7 @@ jobs:
             work/UnifiedPixelLiveWallpaper.apk
             work/manifest.txt
             work/dex-packages.txt
+            work/dex-validation.txt
             work/apk-contents.txt
             work/pokemon-unity-assets-report.txt
             work/pokemon-background-enhancement.txt
