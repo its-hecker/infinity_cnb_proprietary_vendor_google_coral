@@ -187,6 +187,24 @@ jobs:
           staged = Path("work/staged.apk")
           payload = Path("work/payload-release.apk")
 
+          # The repository stores the generated unified APK, so later runs start from an
+          # already-injected package. Remove the previous Sidekick dex first; otherwise
+          # every rebuild would accumulate duplicate class definitions.
+          marker = b"Lcom/hecker/motionsense/wallpapers/UnifiedSidekickWallpaper;"
+          cleaned = staged.with_name("staged-clean.apk")
+          removed = []
+          with zipfile.ZipFile(staged, "r") as zin, \
+                  zipfile.ZipFile(cleaned, "w") as zout:
+              for info in zin.infolist():
+                  blob = zin.read(info.filename)
+                  if re.fullmatch(r"classes(\\d*)\\.dex", info.filename) and marker in blob:
+                      removed.append(info.filename)
+                      continue
+                  zout.writestr(info, blob)
+          cleaned.replace(staged)
+          if removed:
+              print("Removed previous Sidekick dex:", ", ".join(removed))
+
           with zipfile.ZipFile(staged, "r") as z:
               names = z.namelist()
           indices = []
