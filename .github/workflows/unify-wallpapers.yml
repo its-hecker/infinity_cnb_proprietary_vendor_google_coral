@@ -1,0 +1,327 @@
+name: Build unified Pokemon + Sidekick wallpaper
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - faceid
+    paths:
+      - ".github/workflows/unify-wallpapers.yml"
+      - "tools/unify_pixel_live_wallpaper.py"
+
+permissions:
+  contents: write
+
+jobs:
+  unify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout vendor faceid
+        uses: actions/checkout@v4
+        with:
+          ref: faceid
+          fetch-depth: 0
+
+      - name: Checkout device faceid
+        uses: actions/checkout@v4
+        with:
+          repository: its-hecker/infinity_cnb_android_device_google_coral
+          ref: faceid
+          path: device
+          fetch-depth: 1
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Prepare enhanced Sidekick assets
+        run: |
+          set -euxo pipefail
+          mkdir -p work/assets/sidekick
+          python3 device/MotionSenseWallpapers/tools/build_extended_packs.py \
+            --source-raw device/MotionSenseWallpapers/res/raw \
+            --out work/assets/sidekick
+          test "$(find work/assets/sidekick -name 'wallpaper_*.json' | wc -l)" -ge 12
+          python3 -m json.tool work/assets/sidekick/wallpaper_doraemon.json >/dev/null
+          python3 -m json.tool work/assets/sidekick/wallpaper_batman.json >/dev/null
+
+      - name: Build resource-independent Sidekick payload
+        run: |
+          set -euxo pipefail
+          mkdir -p work/payload/src/main/java/com/hecker/motionsense/wallpapers
+          mkdir -p work/payload/src/main/assets/sidekick
+          cp device/MotionSenseWallpapers/unified_payload/UnifiedSidekickWallpaper.java \
+            work/payload/src/main/java/com/hecker/motionsense/wallpapers/
+          cp device/MotionSenseWallpapers/src/com/hecker/motionsense/wallpapers/OsloGestureClient.java \
+            work/payload/src/main/java/com/hecker/motionsense/wallpapers/
+          cp work/assets/sidekick/*.json work/payload/src/main/assets/sidekick/
+
+          cat > work/payload/settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "SidekickPayload"
+          EOF
+
+          cat > work/payload/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3'
+          }
+
+          android {
+              namespace 'com.hecker.motionsense.wallpapers'
+              compileSdk 35
+
+              defaultConfig {
+                  applicationId 'com.hecker.sidekick.payload'
+                  minSdk 29
+                  targetSdk 35
+                  versionCode 1
+                  versionName '1'
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+          }
+
+          dependencies {
+              implementation 'com.airbnb.android:lottie:6.6.2'
+          }
+          EOF
+
+          cat > work/payload/src/main/AndroidManifest.xml <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:hasCode="true" />
+          </manifest>
+          EOF
+
+          (
+            cd work/payload
+            gradle --no-daemon :assembleRelease
+          )
+          test -f work/payload/build/outputs/apk/release/payload-release-unsigned.apk
+
+      - name: Download apktool
+        run: |
+          set -euxo pipefail
+          mkdir -p work/tools
+          curl -fL --retry 3 \
+            -o work/tools/apktool.jar \
+            https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar
+          java -jar work/tools/apktool.jar --version
+
+      - name: Decode Google PixelLiveWallpaper and add Sidekick
+        env:
+          BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
+        run: |
+          set -euxo pipefail
+          test -s "$BASE_APK"
+          java -jar work/tools/apktool.jar d -f -s "$BASE_APK" -o work/decoded
+          python3 tools/unify_pixel_live_wallpaper.py \
+            --decoded work/decoded \
+            --assets work/assets/sidekick
+          java -jar work/tools/apktool.jar b work/decoded -o work/staged.apk
+
+      - name: Inject payload dex
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import re
+          import zipfile
+          from pathlib import Path
+
+          staged = Path("work/staged.apk")
+          payload = Path("work/payload/build/outputs/apk/release/payload-release-unsigned.apk")
+
+          with zipfile.ZipFile(staged, "r") as z:
+              names = z.namelist()
+          indices = []
+          for name in names:
+              m = re.fullmatch(r"classes(\d*)\.dex", name)
+              if m:
+                  indices.append(int(m.group(1) or "1"))
+          next_index = max(indices or [0]) + 1
+
+          with zipfile.ZipFile(payload, "r") as p:
+              dex_names = sorted(
+                  [n for n in p.namelist() if re.fullmatch(r"classes(\d*)\.dex", n)],
+                  key=lambda n: int(re.fullmatch(r"classes(\d*)\.dex", n).group(1) or "1"),
+              )
+              blobs = [(n, p.read(n)) for n in dex_names]
+
+          with zipfile.ZipFile(staged, "a", compression=zipfile.ZIP_DEFLATED) as z:
+              for _, blob in blobs:
+                  out_name = "classes%d.dex" % next_index
+                  z.writestr(out_name, blob)
+                  print("Injected", out_name)
+                  next_index += 1
+          PY
+
+      - name: Align and sign validation APK
+        run: |
+          set -euxo pipefail
+          BT="$ANDROID_HOME/build-tools/35.0.0"
+          "$BT/zipalign" -f -p 4 work/staged.apk work/unified-unsigned.apk
+          keytool -genkeypair -v \
+            -keystore work/validation.jks \
+            -storepass android -keypass android \
+            -alias androiddebugkey \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Sidekick Validation,O=Hecker,C=PK" >/dev/null 2>&1
+          "$BT/apksigner" sign \
+            --ks work/validation.jks \
+            --ks-pass pass:android \
+            --key-pass pass:android \
+            --out work/UnifiedPixelLiveWallpaper.apk \
+            work/unified-unsigned.apk
+          "$BT/apksigner" verify --verbose work/UnifiedPixelLiveWallpaper.apk
+
+      - name: Validate unified package
+        run: |
+          set -euxo pipefail
+          APKS="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          "$APKS" manifest print work/UnifiedPixelLiveWallpaper.apk \
+            | tee work/manifest.txt
+          grep -F "com.hecker.motionsense.wallpapers.UnifiedSidekickWallpaper" work/manifest.txt
+
+          unzip -l work/UnifiedPixelLiveWallpaper.apk \
+            | tee work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_hecker.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_doraemon.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_ben10.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_batman.json" work/apk-contents.txt
+          grep -F "assets/sidekick/wallpaper_tom_jerry.json" work/apk-contents.txt
+
+          "$APKS" dex packages work/UnifiedPixelLiveWallpaper.apk \
+            | tee work/dex-packages.txt
+          grep -F "com.hecker.motionsense.wallpapers" work/dex-packages.txt
+
+      - name: Inventory Pokemon Unity backgrounds
+        continue-on-error: true
+        env:
+          BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --disable-pip-version-check UnityPy Pillow
+          rm -rf work/google-original
+          mkdir -p work/google-original
+          unzip -q "$BASE_APK" -d work/google-original
+          python3 - <<'PY' > work/pokemon-unity-assets-report.txt
+          from pathlib import Path
+          import re
+
+          root = Path("work/google-original")
+          candidates = [
+              p for p in root.rglob("*")
+              if p.is_file() and (
+                  p.suffix.lower() in {".assets", ".resource", ".resS", ".bundle"}
+                  or "unity" in p.name.lower()
+                  or "sharedassets" in p.name.lower()
+              )
+          ]
+
+          print("Google Pokemon Unity asset inventory")
+          print("Candidate files:", len(candidates))
+          for p in candidates:
+              print("FILE", p.relative_to(root), p.stat().st_size)
+
+          try:
+              import UnityPy
+              env = UnityPy.load(str(root))
+              textures = []
+              for obj in env.objects:
+                  if obj.type.name != "Texture2D":
+                      continue
+                  try:
+                      data = obj.read()
+                      textures.append((
+                          getattr(data, "m_Name", ""),
+                          getattr(data, "m_Width", 0),
+                          getattr(data, "m_Height", 0),
+                          obj.path_id,
+                      ))
+                  except Exception as exc:
+                      print("TEXTURE_READ_ERROR", obj.path_id, repr(exc))
+
+              print("\nTexture2D count:", len(textures))
+              pattern = re.compile(
+                  r"(background|\\bbg\\b|environment|scene|sky|ground|terrain|"
+                  r"landscape|room|forest|field|grass|cloud|mountain|water|sun|moon|"
+                  r"pokemon|pikachu|eevee|grookey|scorbunny|sobble)",
+                  re.I,
+              )
+              for name, w, h, path_id in sorted(textures, key=lambda x: (x[0].lower(), x[3])):
+                  if pattern.search(name) or (w >= 512 and h >= 512):
+                      print("TEXTURE", path_id, w, h, name)
+          except Exception as exc:
+              print("UNITYPY_ERROR", repr(exc))
+          PY
+          cat work/pokemon-unity-assets-report.txt
+
+      - name: Store unified APK and report on faceid
+        run: |
+          set -euxo pipefail
+          cp work/UnifiedPixelLiveWallpaper.apk \
+            proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
+          mkdir -p tools
+          if [ -f work/pokemon-unity-assets-report.txt ]; then
+            cp work/pokemon-unity-assets-report.txt tools/pokemon-unity-assets-report.txt
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
+            tools/pokemon-unity-assets-report.txt || true
+
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+
+          git commit -m "coral: unify Pokemon and Sidekick live wallpapers"
+          git push origin HEAD:faceid
+
+      - name: Upload validation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unified-pixel-live-wallpaper
+          path: |
+            work/UnifiedPixelLiveWallpaper.apk
+            work/manifest.txt
+            work/dex-packages.txt
+            work/apk-contents.txt
+            work/pokemon-unity-assets-report.txt
+          if-no-files-found: warn
