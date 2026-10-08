@@ -1,0 +1,65 @@
+Google Pokemon Unity asset inventory
+Candidate files: 19
+FILE lib/arm64-v8a/libunity.so 16679056
+FILE assets/aa/Android/Android/pokemonprefabsharedassetgroup_assets_all_8245075653b489774311b2d439c61373.bundle 374143
+FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/scorbunny.prefab_43857d7315cc3e462350fededd3ecc32.bundle 1605810
+FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/grookey.prefab_d0af4b42d48c116fea7afb4368dcd8eb.bundle 3259256
+FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/pikachu.prefab_75ff04525344a0f88586e33037b5c1fa.bundle 2245589
+FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/eevee.prefab_a24a4057e57604e41ee6cbbb31120d59.bundle 1045203
+FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/sobble.prefab_f63fc4a6e204a2ce721bca3a051c5900.bundle 2379657
+FILE assets/bin/Data/sharedassets1.assets.split0 1048576
+FILE assets/bin/Data/sharedassets1.assets.split1 1048576
+FILE assets/bin/Data/sharedassets1.assets.split2 1048576
+FILE assets/bin/Data/sharedassets0.assets.split0 1048576
+FILE assets/bin/Data/sharedassets0.assets.split3 1048576
+FILE assets/bin/Data/sharedassets0.assets.split2 1048576
+FILE assets/bin/Data/sharedassets0.assets.split1 1048576
+FILE assets/bin/Data/sharedassets0.assets.split4 1048576
+FILE assets/bin/Data/sharedassets0.assets.split5 891696
+FILE assets/bin/Data/unity default resources 3689292
+FILE assets/bin/Data/sharedassets1.assets.split3 839532
+FILE assets/bin/Data/Resources/unity_builtin_extra 395924
+
+Texture2D count: 152
+TEXTURE 36 512 512 airhand
+TEXTURE 44 512 512 blobby1
+TEXTURE 38 1024 512 cloudC2
+TEXTURE 42 1024 512 cloudC_light
+TEXTURE 8 1024 1024 DroidSansFallback SDF Atlas
+TEXTURE 45 512 512 Large01
+TEXTURE 16 512 512 Large02
+TEXTURE -1866480881253209869 512 512 Lightning
+TEXTURE 4 512 512 Medium01
+TEXTURE 41 512 512 Medium02
+TEXTURE 22 512 512 Medium03
+TEXTURE 26 512 512 Medium04
+TEXTURE 14 512 512 Medium05
+TEXTURE 25 512 512 Medium06
+TEXTURE -7921457363700021197 512 512 pm0133_00_00_Body_col
+TEXTURE 53 2048 1024 PokeballFXSheet_6X3
+TEXTURE 59 1024 1024 Poppins-BoldItalic SDF Atlas
+TEXTURE 32 1652 568 promptshadow
+TEXTURE 33 512 512 RainStar
+TEXTURE 9164551283222619332 512 512 shockwave
+TEXTURE 45 1024 1024 smoke-white
+TEXTURE 7632897134316027120 1024 1024 smoke-white
+TEXTURE 4766666733306929138 1024 1024 SplashLanding
+TEXTURE 54 1024 1024 stars_twinkly
+TEXTURE 47 1024 1024 Sun pokemon
+TEXTURE 11024 12 12 textfield
+TEXTURE 11026 12 12 textfield hover
+TEXTURE 11025 12 12 textfield on
+TEXTURE 17 512 512 Thin01
+TEXTURE 38 512 512 Thin02
+TEXTURE 52 512 512 touchHand
+TEXTURE 10403 2048 1024 UnitySplash-cube
+TEXTURE 10408 127 17 UnityWatermark-beta
+TEXTURE 10410 115 17 UnityWatermark-dev
+TEXTURE 10409 148 17 UnityWatermark-edu
+TEXTURE 10413 87 13 UnityWatermark-proto
+TEXTURE 10400 128 58 UnityWatermark-small
+TEXTURE 10407 76 14 UnityWatermark-trial
+TEXTURE 10406 512 94 UnityWatermark-trial-big
+TEXTURE 10414 66 17 UnityWatermarkPlugin-beta
+TEXTURE 35 128 128 WaterDropParticle
+TEXTURE 58 128 128 WaterMistParticle
