@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/unify-wallpapers.yml"
       - "tools/unify_pixel_live_wallpaper.py"
+      - "tools/enhance_pokemon_backgrounds.py"
 
 permissions:
   contents: write
@@ -154,16 +155,23 @@ jobs:
             https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar
           java -jar work/tools/apktool.jar --version
 
-      - name: Decode Google PixelLiveWallpaper and add Sidekick
+      - name: Decode Google PixelLiveWallpaper, enhance environments and add Sidekick
         env:
           BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
         run: |
           set -euxo pipefail
           test -s "$BASE_APK"
+          python3 -m pip install --disable-pip-version-check "UnityPy==1.25.4" Pillow
           java -jar work/tools/apktool.jar d -f -s "$BASE_APK" -o work/decoded
 
-          # Keep Google's Pokemon Unity renderer, characters and environments untouched.
-          # Sidekick is injected without rewriting any Pokemon/Unity asset payloads.
+          # Only the exact environment/effect allowlist is modified. Pokemon models,
+          # character textures and Google's renderer remain untouched.
+          python3 tools/enhance_pokemon_backgrounds.py \
+            --root work/decoded \
+            --report work/pokemon-background-enhancement.txt
+          grep -F "Validation: PASS" work/pokemon-background-enhancement.txt
+          grep -F "Environment textures enhanced: 7" work/pokemon-background-enhancement.txt
+          test -s work/decoded/assets/pokemon_environment_enhanced_v2.txt
 
           python3 tools/unify_pixel_live_wallpaper.py \
             --decoded work/decoded \
@@ -261,9 +269,22 @@ jobs:
           grep -F "assets/sidekick/wallpaper_kumo.json" work/apk-contents.txt
           grep -F "assets/sidekick/wallpaper_ember.json" work/apk-contents.txt
           grep -F "assets/sidekick/wallpaper_byte.json" work/apk-contents.txt
+          grep -F "assets/pokemon_environment_enhanced_v2.txt" work/apk-contents.txt
           "$APKS" dex packages work/UnifiedPixelLiveWallpaper.apk \
             | tee work/dex-packages.txt
           grep -F "com.hecker.motionsense.wallpapers" work/dex-packages.txt
+
+          # Prove the modified Unity split assets survived apktool rebuild, dex
+          # injection, zipalign and signing by reopening the final APK and decoding
+          # every allowlisted environment texture again.
+          rm -rf work/final-unity
+          mkdir -p work/final-unity
+          unzip -q work/UnifiedPixelLiveWallpaper.apk -d work/final-unity
+          python3 tools/enhance_pokemon_backgrounds.py \
+            --root work/final-unity \
+            --report work/pokemon-final-validation.txt
+          grep -F "Validation: PASS" work/pokemon-final-validation.txt
+          grep -F "Environment textures enhanced: 7 (already present)" work/pokemon-final-validation.txt
 
       - name: Inventory Pokemon Unity backgrounds
         continue-on-error: true
@@ -327,7 +348,7 @@ jobs:
           PY
           cat work/pokemon-unity-assets-report.txt
 
-      - name: Store unified APK and inventory report on faceid
+      - name: Store unified APK and validation reports on faceid
         run: |
           set -euxo pipefail
           cp work/UnifiedPixelLiveWallpaper.apk \
@@ -336,11 +357,15 @@ jobs:
           if [ -f work/pokemon-unity-assets-report.txt ]; then
             cp work/pokemon-unity-assets-report.txt tools/pokemon-unity-assets-report.txt
           fi
+          cp work/pokemon-background-enhancement.txt tools/pokemon-background-enhancement.txt
+          cp work/pokemon-final-validation.txt tools/pokemon-final-validation.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
-            tools/pokemon-unity-assets-report.txt || true
+            tools/pokemon-unity-assets-report.txt \
+            tools/pokemon-background-enhancement.txt \
+            tools/pokemon-final-validation.txt || true
 
           if git diff --cached --quiet; then
             echo "No generated changes"
@@ -360,4 +385,6 @@ jobs:
             work/dex-packages.txt
             work/apk-contents.txt
             work/pokemon-unity-assets-report.txt
+            work/pokemon-background-enhancement.txt
+            work/pokemon-final-validation.txt
           if-no-files-found: warn
