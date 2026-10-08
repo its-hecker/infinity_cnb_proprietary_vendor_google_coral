@@ -161,7 +161,7 @@ jobs:
         run: |
           set -euxo pipefail
           test -s "$BASE_APK"
-          python3 -m pip install --disable-pip-version-check UnityPy Pillow
+          python3 -m pip install --disable-pip-version-check "UnityPy==1.25.4" Pillow
           java -jar work/tools/apktool.jar d -f -s "$BASE_APK" -o work/decoded
 
           # Only an exact allowlist of Google environment/effect textures is touched.
@@ -170,6 +170,9 @@ jobs:
           python3 tools/enhance_pokemon_backgrounds.py \
             --root work/decoded \
             --report work/pokemon-background-enhancement.txt
+
+          grep -F "Environment textures enhanced: 7" work/pokemon-background-enhancement.txt
+          grep -F "Validation: PASS" work/pokemon-background-enhancement.txt
 
           python3 tools/unify_pixel_live_wallpaper.py \
             --decoded work/decoded \
@@ -269,6 +272,17 @@ jobs:
           grep -F "assets/sidekick/wallpaper_byte.json" work/apk-contents.txt
           test -s work/pokemon-background-enhancement.txt
 
+          # Prove the enhancement stream survived apktool rebuild, zipalign and signing.
+          rm -rf work/final-unity
+          mkdir -p work/final-unity
+          unzip -q work/UnifiedPixelLiveWallpaper.apk 'assets/bin/Data/*' -d work/final-unity
+          python3 tools/enhance_pokemon_backgrounds.py \
+            --root work/final-unity \
+            --validate-only \
+            --report work/pokemon-background-final-validation.txt
+          grep -F "Environment textures enhanced: 7" work/pokemon-background-final-validation.txt
+          grep -F "Validation: PASS" work/pokemon-background-final-validation.txt
+
           "$APKS" dex packages work/UnifiedPixelLiveWallpaper.apk \
             | tee work/dex-packages.txt
           grep -F "com.hecker.motionsense.wallpapers" work/dex-packages.txt
@@ -279,7 +293,7 @@ jobs:
           BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
         run: |
           set -euxo pipefail
-          python3 -m pip install --disable-pip-version-check UnityPy Pillow
+          python3 -m pip install --disable-pip-version-check "UnityPy==1.25.4" Pillow
           rm -rf work/google-original
           mkdir -p work/google-original
           unzip -q "$BASE_APK" -d work/google-original
@@ -347,13 +361,18 @@ jobs:
           if [ -f work/pokemon-background-enhancement.txt ]; then
             cp work/pokemon-background-enhancement.txt tools/pokemon-background-enhancement.txt
           fi
+          if [ -f work/pokemon-background-final-validation.txt ]; then
+            cp work/pokemon-background-final-validation.txt \
+              tools/pokemon-background-final-validation.txt
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
             tools/pokemon-unity-assets-report.txt \
-            tools/pokemon-background-enhancement.txt || true
+            tools/pokemon-background-enhancement.txt \
+            tools/pokemon-background-final-validation.txt || true
 
           if git diff --cached --quiet; then
             echo "No generated changes"
@@ -374,4 +393,5 @@ jobs:
             work/apk-contents.txt
             work/pokemon-unity-assets-report.txt
             work/pokemon-background-enhancement.txt
+            work/pokemon-background-final-validation.txt
           if-no-files-found: warn
