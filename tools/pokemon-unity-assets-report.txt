@@ -1,5 +1,5 @@
 Google Pokemon Unity asset inventory
-Candidate files: 19
+Candidate files: 20
 FILE lib/arm64-v8a/libunity.so 16679056
 FILE assets/aa/Android/Android/pokemonprefabsharedassetgroup_assets_all_8245075653b489774311b2d439c61373.bundle 374143
 FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/scorbunny.prefab_43857d7315cc3e462350fededd3ecc32.bundle 1605810
@@ -10,6 +10,7 @@ FILE assets/aa/Android/Android/pokemonprefabgroup_assets_assets/prefabs/pokemon/
 FILE assets/bin/Data/sharedassets1.assets.split0 1048576
 FILE assets/bin/Data/sharedassets1.assets.split1 1048576
 FILE assets/bin/Data/sharedassets1.assets.split2 1048576
+FILE assets/bin/Data/sharedassets1.assets.pokemon_env.resS 3358848
 FILE assets/bin/Data/sharedassets0.assets.split0 1048576
 FILE assets/bin/Data/sharedassets0.assets.split3 1048576
 FILE assets/bin/Data/sharedassets0.assets.split2 1048576
@@ -17,7 +18,7 @@ FILE assets/bin/Data/sharedassets0.assets.split1 1048576
 FILE assets/bin/Data/sharedassets0.assets.split4 1048576
 FILE assets/bin/Data/sharedassets0.assets.split5 891696
 FILE assets/bin/Data/unity default resources 3689292
-FILE assets/bin/Data/sharedassets1.assets.split3 839532
+FILE assets/bin/Data/sharedassets1.assets.split3 180000
 FILE assets/bin/Data/Resources/unity_builtin_extra 395924
 
 Texture2D count: 152
