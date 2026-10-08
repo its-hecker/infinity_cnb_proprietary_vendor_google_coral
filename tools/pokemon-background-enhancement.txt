@@ -2,23 +2,13 @@ Pokemon environment enhancement report
 Policy: exact environment allowlist only; Pokemon character/model textures untouched.
 Method: ETC payloads use a dedicated resS stream; split SerializedFiles are rebuilt safely.
 UnityPy: 1.25.4
-TARGET cloudC2 path_id=38 owner=sharedassets1.assets format=65->47 mips=11->11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS offset=0 bytes=699088
-TARGET cloudC_light path_id=42 owner=sharedassets1.assets format=65->47 mips=11->11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS offset=699088 bytes=699088
-TARGET RainStar path_id=33 owner=sharedassets1.assets format=65->47 mips=10->10 size=512x512 stream=sharedassets1.assets.pokemon_env.resS offset=1398176 bytes=349552
-TARGET stars_twinkly path_id=54 owner=sharedassets1.assets format=65->47 mips=1->1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS offset=1747728 bytes=1048576
-TARGET Sun pokemon path_id=47 owner=sharedassets1.assets format=64->34 mips=1->1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS offset=2796304 bytes=524288
-TARGET WaterDropParticle path_id=35 owner=sharedassets1.assets format=65->47 mips=8->8 size=128x128 stream=sharedassets1.assets.pokemon_env.resS offset=3320592 bytes=21872
-TARGET WaterMistParticle path_id=58 owner=sharedassets1.assets format=47->47 mips=1->1 size=128x128 stream=sharedassets1.assets.pokemon_env.resS offset=3342464 bytes=16384
-RESOURCE /home/runner/work/infinity_cnb_proprietary_vendor_google_coral/infinity_cnb_proprietary_vendor_google_coral/work/decoded/assets/bin/Data/sharedassets1.assets.pokemon_env.resS bytes=3358848 sha256=c3a3f710a859
-WRITE /home/runner/work/infinity_cnb_proprietary_vendor_google_coral/infinity_cnb_proprietary_vendor_google_coral/work/decoded/assets/bin/Data/sharedassets1.assets bytes=3325728 sha256 b8e211bea9fa -> 98e48ede94f5 parts=4
-VERIFY cloudC2 path_id=38 format=47 mips=11 stream=sharedassets1.assets.pokemon_env.resS pixels d6b5d145f795 -> 1287ca5c6dd6
-VERIFY cloudC_light path_id=42 format=47 mips=11 stream=sharedassets1.assets.pokemon_env.resS pixels 2c5aea364247 -> 9357bd219866
-VERIFY RainStar path_id=33 format=47 mips=10 stream=sharedassets1.assets.pokemon_env.resS pixels bd22e3de21fa -> 19229c21ad34
-VERIFY stars_twinkly path_id=54 format=47 mips=1 stream=sharedassets1.assets.pokemon_env.resS pixels 29ab9f4542f4 -> 230202d9c507
-VERIFY Sun pokemon path_id=47 format=34 mips=1 stream=sharedassets1.assets.pokemon_env.resS pixels 683ba7be8e20 -> 3ed752ef9d9a
-VERIFY WaterDropParticle path_id=35 format=47 mips=8 stream=sharedassets1.assets.pokemon_env.resS pixels 60a7a1e575b4 -> 33d2b311f0d1
-VERIFY WaterMistParticle path_id=58 format=47 mips=1 stream=sharedassets1.assets.pokemon_env.resS pixels 13070c6b2e19 -> f6f91348ab19
+VERIFY cloudC2 path_id=38 format=47 mips=11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS pixels=1287ca5c6dd6
+VERIFY cloudC_light path_id=42 format=47 mips=11 size=1024x512 stream=sharedassets1.assets.pokemon_env.resS pixels=9357bd219866
+VERIFY RainStar path_id=33 format=47 mips=10 size=512x512 stream=sharedassets1.assets.pokemon_env.resS pixels=19229c21ad34
+VERIFY stars_twinkly path_id=54 format=47 mips=1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS pixels=230202d9c507
+VERIFY Sun pokemon path_id=47 format=34 mips=1 size=1024x1024 stream=sharedassets1.assets.pokemon_env.resS pixels=3ed752ef9d9a
+VERIFY WaterDropParticle path_id=35 format=47 mips=8 size=128x128 stream=sharedassets1.assets.pokemon_env.resS pixels=33d2b311f0d1
+VERIFY WaterMistParticle path_id=58 format=47 mips=1 size=128x128 stream=sharedassets1.assets.pokemon_env.resS pixels=f6f91348ab19
 Environment textures enhanced: 7
-Unity top-level files rewritten: 1
-Dedicated resource streams written: 1
-Validation: PASS (complete APK tree reloaded and every enhanced texture decoded)
+Mode: already-enhanced (no second color pass applied)
+Validation: PASS (existing dedicated stream decoded successfully)
