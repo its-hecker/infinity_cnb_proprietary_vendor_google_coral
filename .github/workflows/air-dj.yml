@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           repository: its-hecker/infinity_OsloFeedback
-          ref: 1ef713fca6ff1a37ff2461613238d6607d7aa554
+          ref: fcc2c620e2db9a98a7f09325e5d4d51970734f08
           path: airdj-source
       - uses: actions/setup-java@v5
         with:
@@ -56,16 +56,16 @@ jobs:
           test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/AirDjPolicy.smali"
           test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/OsloExperiments.smali"
           test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/LabGlowRenderer.smali"
-          test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/AlbumArtController.smali"
-          test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/ArtworkPalette.smali"
+          test ! -e "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/AlbumArtController.smali"
+          test ! -e "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/ArtworkPalette.smali"
       - name: Store validated plugin on the feature branch
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = refs/heads/features-experimental
           APK=proprietary/system_ext/priv-app/OsloFeedback/OsloFeedback.apk
           cp "$RUNNER_TEMP/OsloFeedback-MotionLab-validation.apk" "$APK"
-          printf 'Motion Lab + Air DJ + Album Art Glow source: %s\nAPK SHA256: %s\n' \
-            1ef713fca6ff1a37ff2461613238d6607d7aa554 \
+          printf 'Motion Sense + Air DJ source: %s\nAPK SHA256: %s\n' \
+            fcc2c620e2db9a98a7f09325e5d4d51970734f08 \
             "$(sha256sum "$APK" | cut -d ' ' -f 1)" > tools/air-dj-build.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
