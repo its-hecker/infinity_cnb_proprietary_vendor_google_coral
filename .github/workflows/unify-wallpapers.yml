@@ -2,13 +2,19 @@ name: Build unified Pokemon + Sidekick wallpaper
 
 on:
   workflow_dispatch:
+    inputs:
+      rebuild_payload:
+        description: Rebuild Sidekick code and animations instead of updating picker metadata only
+        type: boolean
+        default: false
   push:
-    branches:
-      - faceid
+    branches: [faceid, features-experimental]
     paths:
       - ".github/workflows/unify-wallpapers.yml"
       - "tools/unify_pixel_live_wallpaper.py"
-      - "tools/enhance_pokemon_backgrounds.py"
+      - "tools/apk_resource_reader.py"
+      - "tools/check_sidekick_picker.py"
+      - "tools/test_sidekick_picker.py"
       - "tools/sidekick_dex.py"
       - "tools/test_sidekick_dex.py"
 
@@ -23,24 +29,27 @@ jobs:
   unify:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
+      REBUILD_PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_payload || false }}
 
     steps:
-      - name: Checkout vendor faceid
+      - name: Checkout vendor branch
         uses: actions/checkout@v4
         with:
-          ref: faceid
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Checkout device faceid
+      - name: Checkout matching device branch
         uses: actions/checkout@v4
         with:
           repository: its-hecker/infinity_cnb_android_device_google_coral
-          ref: faceid
+          ref: ${{ github.ref_name }}
           path: device
           fetch-depth: 1
 
-      - name: Test DEX replacement
-        run: python3 -m unittest discover -s tools -p "test_sidekick_dex.py" -v
+      - name: Test picker registration and DEX replacement
+        run: python3 -m unittest discover -s tools -p "test_sidekick*.py" -v
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -56,11 +65,13 @@ jobs:
           sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle
+        if: env.REBUILD_PAYLOAD == 'true'
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.10.2"
 
       - name: Prepare enhanced Sidekick assets
+        if: env.REBUILD_PAYLOAD == 'true'
         run: |
           set -euxo pipefail
           mkdir -p work/assets/sidekick
@@ -76,6 +87,7 @@ jobs:
           python3 -m json.tool work/assets/sidekick/wallpaper_byte.json >/dev/null
 
       - name: Build resource-independent Sidekick payload
+        if: env.REBUILD_PAYLOAD == 'true'
         run: |
           set -euxo pipefail
           mkdir -p work/payload/src/main/java/com/hecker/motionsense/wallpapers
@@ -165,6 +177,7 @@ jobs:
           java -jar work/tools/apktool.jar --version
 
       - name: Isolate Sidekick AndroidX dependencies
+        if: env.REBUILD_PAYLOAD == 'true'
         run: |
           set -euxo pipefail
           java -jar work/tools/apktool.jar d -f -r \
@@ -174,43 +187,38 @@ jobs:
             -o work/payload-isolated.apk
           python3 tools/sidekick_dex.py validate work/payload-isolated.apk
 
-      - name: Decode Google PixelLiveWallpaper, enhance environments and add Sidekick
-        env:
-          BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
+      - name: Register Sidekick in the Pixel picker catalog
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           test -s "$BASE_APK"
-          python3 -m pip install --disable-pip-version-check "UnityPy==1.25.4" Pillow
           java -jar work/tools/apktool.jar d -f -s "$BASE_APK" -o work/decoded
-
-          # Only an exact allowlist of Google environment/effect textures is touched.
-          # Pokemon character/model textures are never selected, and a bad Unity save
-          # is restored automatically instead of poisoning the wallpaper APK.
-          python3 tools/enhance_pokemon_backgrounds.py \
-            --root work/decoded \
-            --report work/pokemon-background-enhancement.txt
-
-          grep -F "Environment textures enhanced: 7" work/pokemon-background-enhancement.txt
-          grep -F "Validation: PASS" work/pokemon-background-enhancement.txt
-
-          python3 tools/unify_pixel_live_wallpaper.py \
-            --decoded work/decoded \
-            --assets work/assets/sidekick
+          if [ "$REBUILD_PAYLOAD" = true ]; then
+            python3 tools/unify_pixel_live_wallpaper.py \
+              --decoded work/decoded \
+              --thumbnail device/MotionSenseWallpapers/res/drawable-nodpi/thumb_hecker.png \
+              --assets work/assets/sidekick
+          else
+            python3 tools/unify_pixel_live_wallpaper.py \
+              --decoded work/decoded \
+              --thumbnail device/MotionSenseWallpapers/res/drawable-nodpi/thumb_hecker.png \
+              --registration-only
+          fi
           java -jar work/tools/apktool.jar b work/decoded -o work/staged.apk
 
-      - name: Inject payload dex
+      - name: Replace payload DEX when requested
+        if: env.REBUILD_PAYLOAD == 'true'
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           python3 tools/sidekick_dex.py inject \
             --staged work/staged.apk \
             --payload work/payload-isolated.apk
 
       - name: Align and sign validation APK
         run: |
-          set -euxo pipefail
+          set -euo pipefail
           BT="$ANDROID_HOME/build-tools/35.0.0"
           "$BT/zipalign" -f -p 4 work/staged.apk work/unified-unsigned.apk
-          keytool -genkeypair -v \
+          keytool -genkeypair \
             -keystore work/validation.jks \
             -storepass android -keypass android \
             -alias androiddebugkey \
@@ -224,149 +232,56 @@ jobs:
             work/unified-unsigned.apk
           "$BT/apksigner" verify --verbose work/UnifiedPixelLiveWallpaper.apk
 
-      - name: Validate unified package
+      - name: Verify compiled catalog, preview and retained wallpaper bytes
         run: |
-          set -euxo pipefail
-          python3 tools/sidekick_dex.py validate \
-            work/UnifiedPixelLiveWallpaper.apk \
+          set -euo pipefail
+          args=()
+          if [ "$REBUILD_PAYLOAD" = true ]; then
+            args+=(--allow-payload-update)
+          fi
+          python3 tools/check_sidekick_picker.py work/UnifiedPixelLiveWallpaper.apk \
+            --baseline "$BASE_APK" \
+            --report work/sidekick-picker-validation.txt "${args[@]}"
+          python3 tools/sidekick_dex.py validate work/UnifiedPixelLiveWallpaper.apk \
             --report work/dex-validation.txt
-          APKS="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
-          "$APKS" manifest print work/UnifiedPixelLiveWallpaper.apk \
-            | tee work/manifest.txt
-          grep -F "com.hecker.motionsense.wallpapers.UnifiedSidekickWallpaper" work/manifest.txt
-
-          unzip -l work/UnifiedPixelLiveWallpaper.apk \
-            | tee work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_hecker.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_doraemon.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_ben10.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_batman.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_tom_jerry.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_nova.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_kumo.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_ember.json" work/apk-contents.txt
-          grep -F "assets/sidekick/wallpaper_byte.json" work/apk-contents.txt
-          test -s work/pokemon-background-enhancement.txt
-
-          # Prove the enhancement stream survived apktool rebuild, zipalign and signing.
-          rm -rf work/final-unity
-          mkdir -p work/final-unity
-          unzip -q work/UnifiedPixelLiveWallpaper.apk 'assets/bin/Data/*' -d work/final-unity
-          python3 tools/enhance_pokemon_backgrounds.py \
-            --root work/final-unity \
-            --validate-only \
-            --report work/pokemon-background-final-validation.txt
-          grep -F "Environment textures enhanced: 7" work/pokemon-background-final-validation.txt
-          grep -F "Validation: PASS" work/pokemon-background-final-validation.txt
-
-          "$APKS" dex packages work/UnifiedPixelLiveWallpaper.apk \
-            | tee work/dex-packages.txt
-          grep -F "com.hecker.motionsense.wallpapers" work/dex-packages.txt
-
-      - name: Inventory Pokemon Unity backgrounds
-        continue-on-error: true
-        env:
-          BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
-        run: |
-          set -euxo pipefail
-          python3 -m pip install --disable-pip-version-check "UnityPy==1.25.4" Pillow
-          rm -rf work/google-original
-          mkdir -p work/google-original
-          unzip -q "$BASE_APK" -d work/google-original
-          python3 - <<'PY' > work/pokemon-unity-assets-report.txt
-          from pathlib import Path
-          import re
-
-          root = Path("work/google-original")
-          candidates = [
-              p for p in root.rglob("*")
-              if p.is_file() and (
-                  p.suffix.lower() in {".assets", ".resource", ".resS", ".bundle"}
-                  or "unity" in p.name.lower()
-                  or "sharedassets" in p.name.lower()
-              )
-          ]
-
-          print("Google Pokemon Unity asset inventory")
-          print("Candidate files:", len(candidates))
-          for p in candidates:
-              print("FILE", p.relative_to(root), p.stat().st_size)
-
-          try:
-              import UnityPy
-              env = UnityPy.load(str(root))
-              textures = []
-              for obj in env.objects:
-                  if obj.type.name != "Texture2D":
-                      continue
-                  try:
-                      data = obj.read()
-                      textures.append((
-                          getattr(data, "m_Name", ""),
-                          getattr(data, "m_Width", 0),
-                          getattr(data, "m_Height", 0),
-                          obj.path_id,
-                      ))
-                  except Exception as exc:
-                      print("TEXTURE_READ_ERROR", obj.path_id, repr(exc))
-
-              print("\nTexture2D count:", len(textures))
-              pattern = re.compile(
-                  r"(background|\\bbg\\b|environment|scene|sky|ground|terrain|"
-                  r"landscape|room|forest|field|grass|cloud|mountain|water|sun|moon|"
-                  r"pokemon|pikachu|eevee|grookey|scorbunny|sobble)",
-                  re.I,
-              )
-              for name, w, h, path_id in sorted(textures, key=lambda x: (x[0].lower(), x[3])):
-                  if pattern.search(name) or (w >= 512 and h >= 512):
-                      print("TEXTURE", path_id, w, h, name)
-          except Exception as exc:
-              print("UNITYPY_ERROR", repr(exc))
-          PY
-          cat work/pokemon-unity-assets-report.txt
-
-      - name: Store unified APK and report on faceid
-        run: |
-          set -euxo pipefail
-          cp work/UnifiedPixelLiveWallpaper.apk \
-            proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
-          mkdir -p tools
-          if [ -f work/pokemon-unity-assets-report.txt ]; then
-            cp work/pokemon-unity-assets-report.txt tools/pokemon-unity-assets-report.txt
-          fi
-          if [ -f work/pokemon-background-enhancement.txt ]; then
-            cp work/pokemon-background-enhancement.txt tools/pokemon-background-enhancement.txt
-          fi
-          if [ -f work/pokemon-background-final-validation.txt ]; then
-            cp work/pokemon-background-final-validation.txt \
-              tools/pokemon-background-final-validation.txt
-          fi
-
-          # GitHub rejects ordinary Git objects larger than 100 MiB.
           python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
           from pathlib import Path
-          apk = Path("proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk")
-          size = apk.stat().st_size
-          if size >= 100 * 1024 * 1024:
-              raise SystemExit(f"APK still exceeds GitHub's file limit: {size} bytes")
-          print(f"APK fits GitHub's file limit: {size} bytes")
+
+          apk = Path("work/UnifiedPixelLiveWallpaper.apk")
+          stamp = {
+              "vendor_source_commit": os.environ["GITHUB_SHA"],
+              "device_source_commit": subprocess.check_output(
+                  ["git", "-C", "device", "rev-parse", "HEAD"], text=True).strip(),
+              "payload_rebuilt": os.environ["REBUILD_PAYLOAD"] == "true",
+              "apk_sha256": hashlib.sha256(apk.read_bytes()).hexdigest(),
+              "apk_bytes": apk.stat().st_size,
+          }
+          Path("work/sidekick-picker-build.json").write_text(
+              json.dumps(stamp, indent=2) + "\n", encoding="utf-8")
           PY
 
+      - name: Publish verified APK to the current branch
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cp work/UnifiedPixelLiveWallpaper.apk "$BASE_APK"
+          cp work/sidekick-picker-validation.txt tools/sidekick-picker-validation.txt
+          cp work/sidekick-picker-build.json tools/sidekick-picker-build.json
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
-            tools/pokemon-unity-assets-report.txt \
-            tools/pokemon-background-enhancement.txt \
-            tools/pokemon-background-final-validation.txt || true
-
+          git add "$BASE_APK" tools/sidekick-picker-validation.txt tools/sidekick-picker-build.json
           if git diff --cached --quiet; then
             echo "No generated changes"
             exit 0
           fi
-
-          git commit -m "coral: unify Pokemon and Sidekick live wallpapers"
-          git push origin HEAD:faceid
+          git commit -m "coral: register unified Sidekick in the live wallpaper picker"
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"
 
       - name: Upload validation artifacts
         if: always()
@@ -375,11 +290,8 @@ jobs:
           name: unified-pixel-live-wallpaper
           path: |
             work/UnifiedPixelLiveWallpaper.apk
-            work/manifest.txt
-            work/dex-packages.txt
+            work/sidekick-picker-validation.txt
+            work/sidekick-picker-build.json
             work/dex-validation.txt
-            work/apk-contents.txt
-            work/pokemon-unity-assets-report.txt
-            work/pokemon-background-enhancement.txt
-            work/pokemon-background-final-validation.txt
           if-no-files-found: warn
+
