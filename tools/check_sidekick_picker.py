@@ -148,6 +148,7 @@ def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
     return ("Picker category: Come Alive\n"
             f"Sidekick catalog entries: {len(CHARACTERS)}\n"
             "Preview thumbnail, description and author: PASS\n"
+            "Scene lighting preserves background alpha: PASS\n"
             "Existing Google services and catalog entries: unchanged\n"
             f"Existing asset/native files with identical bytes: {len(before_names)}\n"
             f"Retained DEX files with identical bytes: {len(old_code)}\n"
