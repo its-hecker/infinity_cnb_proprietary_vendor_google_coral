@@ -1,13 +1,13 @@
-name: Inspect stock Face ID calibration dependency
+name: Restore stock Face ID calibration dependency
 
 on:
   push:
     branches: [features-experimental]
-    paths: [".github/workflows/inspect-face-calibration.yml"]
+    paths: [".github/workflows/inspect-face-calibration.yml", "tools/check_face_calibration.py"]
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
@@ -15,6 +15,14 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Checkout matching device branch
+        uses: actions/checkout@v4
+        with:
+          repository: its-hecker/infinity_cnb_android_device_google_coral
+          ref: ${{ github.ref_name }}
+          path: device
       - name: Fetch the calibration blob from the matching stock build
         run: |
           set -euo pipefail
@@ -44,6 +52,31 @@ jobs:
           readelf -Wn proprietary/vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google > work/current-face-buildid.txt
           readelf -Wd proprietary/vendor/lib64/android.hardware.keymaster@4.1-impl.nos.so > work/keymaster-dependencies.txt
           cat work/calibration-elf.txt work/stock-face-buildid.txt work/current-face-buildid.txt work/keymaster-dependencies.txt
+      - name: Verify the solver and active Face HAL package
+        run: |
+          set -euo pipefail
+          python3 tools/check_face_calibration.py work/libautocalsolvers.so \
+            --stock-face work/stock-face-hal \
+            --face proprietary/vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google \
+            --device-root device \
+            --report work/face-calibration-validation.txt
+      - name: Publish the verified calibration dependency
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cp work/libautocalsolvers.so proprietary/vendor/lib64/libautocalsolvers.so
+          cp work/face-calibration-validation.txt tools/face-calibration-validation.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add proprietary/vendor/lib64/libautocalsolvers.so tools/face-calibration-validation.txt
+          if git diff --cached --quiet; then
+            echo "No generated changes"
+            exit 0
+          fi
+          git commit -m "face: ship the missing stock automatic calibration solver"
+          git pull --rebase origin "$BRANCH"
+          git push origin "HEAD:$BRANCH"
       - name: Upload inspected calibration blob
         uses: actions/upload-artifact@v4
         with:

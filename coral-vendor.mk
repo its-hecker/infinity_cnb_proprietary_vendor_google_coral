@@ -1559,5 +1559,6 @@ PRODUCT_COPY_FILES += \
     vendor/google/coral/proprietary/vendor/etc/init/android.hardware.biometrics.face@1.0-service.google.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.biometrics.face@1.0-service.google.rc
 
 PRODUCT_PACKAGES += \
+    libautocalsolvers \
     android.hardware.biometrics.face@1.0-service.google \
     manifest_face.xml

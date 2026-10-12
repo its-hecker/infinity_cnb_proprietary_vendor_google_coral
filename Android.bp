@@ -24064,7 +24064,7 @@ cc_prebuilt_binary {
                 "android.hardware.thermal@2.0",
                 "libcamera2ndk_v33_face",
                 "libbinder",
-                "libstagefright_foundation",
+                "libstagefright_foundation-v33",
                 "libcutils",
                 "libcamera_metadata",
                 "libmediandk",
@@ -24092,5 +24092,34 @@ prebuilt_etc_xml {
     src: "proprietary/vendor/etc/vintf/manifest/manifest_face.xml",
     filename_from_src: true,
     sub_dir: "vintf/manifest",
+    soc_specific: true,
+}
+
+// Face HAL opens this with dlopen; it is absent from its DT_NEEDED list.
+cc_prebuilt_library_shared {
+    name: "libautocalsolvers",
+    owner: "google",
+    target: {
+        android_arm64: {
+            srcs: [
+                "proprietary/vendor/lib64/libautocalsolvers.so",
+            ],
+            shared_libs: [
+                "libm",
+                "liblog",
+                "libz",
+                "libdl",
+                "libc",
+            ],
+        },
+    },
+    compile_multilib: "64",
+    // The verified stock blob has SONAME libautocalsolvers.so-Wl.
+    // HAL dlopen requires the stock filename libautocalsolvers.so.
+    check_elf_files: false,
+    strip: {
+        none: true,
+    },
+    prefer: true,
     soc_specific: true,
 }
