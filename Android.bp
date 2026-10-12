@@ -24064,7 +24064,7 @@ cc_prebuilt_binary {
                 "android.hardware.thermal@2.0",
                 "libcamera2ndk_v33_face",
                 "libbinder",
-                "libstagefright_foundation-v33",
+                "libstagefright_foundation",
                 "libcutils",
                 "libcamera_metadata",
                 "libmediandk",
