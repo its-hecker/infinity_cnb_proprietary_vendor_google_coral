@@ -1,0 +1,9 @@
+// Manifest-only registration of the Pokemon renderer already bundled by Google.
+python_binary_host {
+    name: "coral_enable_google_pokemon_wallpaper",
+    main: "enable_google_pokemon_wallpaper.py",
+    srcs: [
+        "enable_google_pokemon_wallpaper.py",
+        "apk_resource_reader.py",
+    ],
+}

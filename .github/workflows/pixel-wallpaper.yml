@@ -1,4 +1,4 @@
-name: Check original Google live wallpapers
+name: Check bundled Google Pokemon wallpaper
 
 on:
   workflow_dispatch:
@@ -7,6 +7,9 @@ on:
     paths:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
+      - 'tools/enable_google_pokemon_wallpaper.py'
+      - 'tools/Android.bp'
+      - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
       - 'proprietary/product/priv-app/PixelLiveWallpaper/**'
       - 'Android.bp'
@@ -16,6 +19,9 @@ on:
     paths:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
+      - 'tools/enable_google_pokemon_wallpaper.py'
+      - 'tools/Android.bp'
+      - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
       - 'proprietary/product/priv-app/PixelLiveWallpaper/**'
       - 'Android.bp'
@@ -35,3 +41,22 @@ jobs:
           python-version: '3.12'
       - name: Verify original APK and absence of custom Sidekick content
         run: python3 tools/check_pixel_wallpaper.py
+      - name: Enable bundled Google Pokemon and verify unchanged payload
+        run: |
+          python3 tools/enable_google_pokemon_wallpaper.py \
+            --input proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
+            --output "$RUNNER_TEMP/PixelLiveWallpaper.apk"
+          python3 tools/check_pixel_wallpaper.py \
+            --enabled "$RUNNER_TEMP/PixelLiveWallpaper.apk"
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Install Android build tools
+        run: sdkmanager 'build-tools;35.0.0'
+      - name: Parse generated manifest with Android AAPT2
+        run: |
+          "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump xmltree \
+            "$RUNNER_TEMP/PixelLiveWallpaper.apk" --file AndroidManifest.xml \
+            > "$RUNNER_TEMP/PixelLiveWallpaper.xmltree"
