@@ -1,0 +1,51 @@
+name: Inspect Keymaster legacy crypto ABI
+
+on:
+  push:
+    branches: [features-experimental]
+    paths: [".github/workflows/inspect-keymaster-crypto.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve the installed compatibility library and ELF tooling
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          sudo apt-get update -qq
+          sudo apt-get install -y patchelf
+          cp /usr/bin/patchelf work/patchelf
+          curl -fL --retry 3 \
+            https://raw.githubusercontent.com/LineageOS/android_hardware_lineage_compat/8d1f79edefa48fd848b3e306fc7361fb944041b3/vndk/v33/arm64/libcrypto-v33.so \
+            -o work/libcrypto-v33.so
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          data = Path("work/libcrypto-v33.so").read_bytes()
+          digest = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          assert digest == "e99fe843b8f7b1aa3937d85b1bdb91cc84cae951", digest
+          print("Compatibility Git blob:", digest)
+          PY
+      - name: Inspect crypto symbols and Keymaster dependencies
+        run: |
+          set -euo pipefail
+          cp proprietary/vendor/lib64/android.hardware.keymaster@4.1-impl.nos.so work/keymaster-impl.original
+          cp proprietary/vendor/bin/hw/android.hardware.keymaster@4.1-service.citadel work/keymaster-service.original
+          readelf -Wh work/libcrypto-v33.so > work/crypto-elf.txt
+          readelf -Wd work/libcrypto-v33.so >> work/crypto-elf.txt
+          readelf -Wn work/libcrypto-v33.so >> work/crypto-elf.txt
+          readelf -Ws work/libcrypto-v33.so > work/crypto-symbols.txt
+          readelf -Wd work/keymaster-impl.original > work/impl-dependencies.txt
+          readelf -Wd work/keymaster-service.original > work/service-dependencies.txt
+          cat work/crypto-elf.txt work/service-dependencies.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keymaster-crypto-inspection
+          path: work/
