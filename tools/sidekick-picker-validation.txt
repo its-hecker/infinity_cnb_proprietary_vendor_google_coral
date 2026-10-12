@@ -7,7 +7,7 @@ Existing asset/native files with identical bytes: 198
 Retained DEX files with identical bytes: 2
 Sidekick character assets: 16
 DEX files: 3
-Class definitions: 9119
+Class definitions: 9120
 Duplicate class definitions: 0
 Sidekick service: classes3.dex
 Oslo client: classes3.dex
