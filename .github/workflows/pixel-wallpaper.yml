@@ -8,6 +8,7 @@ on:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
       - 'tools/enable_google_pokemon_wallpaper.py'
+      - 'tools/test_google_pokemon_registration.py'
       - 'tools/Android.bp'
       - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
@@ -20,6 +21,7 @@ on:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
       - 'tools/enable_google_pokemon_wallpaper.py'
+      - 'tools/test_google_pokemon_registration.py'
       - 'tools/Android.bp'
       - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
@@ -45,6 +47,8 @@ jobs:
           python-version: '3.12'
       - name: Verify original APK and absence of custom Sidekick content
         run: python3 tools/check_pixel_wallpaper.py
+      - name: Check Pokemon identifier, fused-module and Oslo permission regressions
+        run: python3 -m unittest discover -s tools -p test_google_pokemon_registration.py
       - name: Enable bundled Google Pokemon and verify unchanged payload
         run: |
           python3 tools/enable_google_pokemon_wallpaper.py \
