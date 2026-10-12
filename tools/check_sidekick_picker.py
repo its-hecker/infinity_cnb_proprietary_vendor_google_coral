@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 from pathlib import Path
 import zipfile
 
@@ -139,6 +140,10 @@ def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
         require(old_code == new_code, "Retained wallpaper DEX bytes changed")
         sidekick_assets = {n for n in apk.namelist() if n.startswith("assets/sidekick/wallpaper_") and n.endswith(".json")}
         require(len(sidekick_assets) == len(CHARACTERS), "Expected exactly 16 Sidekick characters")
+        for asset in sorted(sidekick_assets):
+            animation = json.loads(apk.read(asset))
+            require(all(layer.get("bm", 0) != 1 for layer in animation["layers"]),
+                    "Alpha-modulating multiply blend would erase the scene: " + asset)
     require(path.stat().st_size < 100 * 1024 * 1024, "APK exceeds GitHub file limit")
     return ("Picker category: Come Alive\n"
             f"Sidekick catalog entries: {len(CHARACTERS)}\n"
