@@ -36,6 +36,10 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            tools
+            proprietary/product/priv-app/PixelLiveWallpaper
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -52,9 +56,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - name: Install Android build tools
-        run: sdkmanager 'build-tools;35.0.0'
+        run: |
+          set -euo pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;35.0.0'
       - name: Parse generated manifest with Android AAPT2
         run: |
           "$ANDROID_HOME/build-tools/35.0.0/aapt2" dump xmltree \
