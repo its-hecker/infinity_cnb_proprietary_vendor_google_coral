@@ -70,6 +70,8 @@ def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
         all_configs = resources(apk.read("resources.arsc"), default_only=False)
         old_table = resources(old.read("resources.arsc"))
         require(manifest.get("package") == EXPECTED_PACKAGE, "Unexpected wallpaper package")
+        require(any(n.get(a("name")) == "android.permission.STATUS_BAR_SERVICE"
+                    for n in manifest.findall("uses-permission")), "Oslo service permission missing")
         app = manifest.find("application")
         require(app is not None, "Application missing")
         services = {s.get(a("name")): s for s in app.findall("service")}
@@ -175,3 +177,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

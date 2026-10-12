@@ -41,6 +41,9 @@ def register_picker(decoded: Path, thumbnail_dir: Path) -> None:
     app = root.find("application")
     if app is None:
         raise RuntimeError("PixelLiveWallpaper has no <application>")
+    # Oslo binding must also survive a metadata-only rebuild of an existing payload.
+    if not any(n.get(a("name")) == PERMISSION for n in root.findall("uses-permission")):
+        root.insert(0, ET.Element("uses-permission", {a("name"): PERMISSION}))
     for key, _, _ in CHARACTERS:
         preview = thumbnail_dir / ("sidekick_" + key + "_thumbnail.png")
         if not preview.is_file() or not preview.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"):
@@ -168,8 +171,6 @@ def main() -> None:
         root = tree.getroot()
         if root.get("package") != EXPECTED_PACKAGE:
             raise RuntimeError("Unexpected PixelLiveWallpaper package")
-        if not any(n.get(a("name")) == PERMISSION for n in root.findall("uses-permission")):
-            root.insert(0, ET.Element("uses-permission", {a("name"): PERMISSION}))
         dest = args.decoded / "assets/sidekick"
         if dest.exists():
             shutil.rmtree(dest)
@@ -179,3 +180,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

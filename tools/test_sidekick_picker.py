@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
-from unify_pixel_live_wallpaper import CATALOG, CHARACTERS, SERVICE, a, component, register_picker
+from unify_pixel_live_wallpaper import CATALOG, CHARACTERS, SERVICE, PERMISSION, a, component, register_picker
 
 
 class PickerRegistrationTest(unittest.TestCase):
@@ -45,6 +45,8 @@ class PickerRegistrationTest(unittest.TestCase):
         google_before = ET.tostring(ET.parse(self.manifest).getroot().find("application/service"))
         register_picker(self.root, self.preview)
         root = ET.parse(self.manifest).getroot()
+        self.assertEqual(sum(p.get(a("name")) == PERMISSION
+                             for p in root.findall("uses-permission")), 1)
         app = root.find("application")
         self.assertEqual(self.items(self.catalog), ["com.google.wallpapers.Pokemon", "com.google.wallpapers.Delights"] + [component(cls) for _, _, cls in CHARACTERS])
         self.assertEqual(self.items(self.catalog, "living_universe_service_names"), ["com.google.wallpapers.Earth"])
@@ -69,6 +71,8 @@ class PickerRegistrationTest(unittest.TestCase):
         snapshots = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
         register_picker(self.root, self.preview)
         self.assertEqual(snapshots, {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()})
+        self.assertEqual(sum(p.get(a("name")) == PERMISSION
+                             for p in ET.parse(self.manifest).getroot().findall("uses-permission")), 1)
         self.assertNotIn(SERVICE, self.items(localized))
         for _, _, cls in CHARACTERS:
             self.assertEqual(self.items(localized).count(component(cls)), 1)
@@ -126,3 +130,4 @@ class PickerRegistrationTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

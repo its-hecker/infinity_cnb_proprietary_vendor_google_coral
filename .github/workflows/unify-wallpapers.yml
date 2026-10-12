@@ -246,6 +246,29 @@ jobs:
             work/unified-unsigned.apk
           "$BT/apksigner" verify --verbose work/UnifiedPixelLiveWallpaper.apk
 
+      - name: Record playback and Binder regression results
+        if: env.REBUILD_PAYLOAD == 'true'
+        run: |
+          python3 - <<'PY' > work/sidekick-runtime-validation.txt
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          expected = {'OsloGestureClientTest': 5, 'SidekickPlaybackTest': 3, 'SidekickRenderTest': 4}
+          observed = {}
+          for path in sorted(Path('work/payload/build/test-results/testDebugUnitTest').glob('TEST-*.xml')):
+              suite = ET.parse(path).getroot()
+              name = suite.get('name').rsplit('.', 1)[-1]
+              assert int(suite.get('failures', 0)) == 0, name
+              assert int(suite.get('errors', 0)) == 0, name
+              assert int(suite.get('skipped', 0)) == 0, name
+              observed[name] = int(suite.get('tests'))
+              print(name + ': ' + suite.get('tests') + ' tests passed')
+              for case in suite.findall('testcase'):
+                  print('  PASS ' + case.get('name'))
+          for name, minimum in expected.items():
+              assert observed.get(name, 0) >= minimum, 'Missing required runtime tests: ' + name
+          print('Android Binder/frame scheduling checks passed; phone performance remains unverified.')
+          PY
+
       - name: Verify compiled catalog, preview and retained wallpaper bytes
         run: |
           set -euo pipefail
@@ -294,17 +317,23 @@ jobs:
           if [ -f work/render/render-validation.txt ]; then
             cp work/render/render-validation.txt tools/sidekick-render-validation.txt
           fi
+          if [ -f work/sidekick-runtime-validation.txt ]; then
+            cp work/sidekick-runtime-validation.txt tools/sidekick-runtime-validation.txt
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$BASE_APK" tools/sidekick-picker-validation.txt tools/sidekick-picker-build.json
           if [ -f tools/sidekick-render-validation.txt ]; then
             git add tools/sidekick-render-validation.txt
           fi
+          if [ -f tools/sidekick-runtime-validation.txt ]; then
+            git add tools/sidekick-runtime-validation.txt
+          fi
           if git diff --cached --quiet; then
             echo "No generated changes"
             exit 0
           fi
-          git commit -m "coral: publish Sidekick renderer and individual character picker tiles"
+          git commit -m "coral: publish paced Sidekick playback and typed Motion Sense listeners"
           git pull --rebase origin "$BRANCH"
           git push origin "HEAD:$BRANCH"
 
@@ -318,7 +347,9 @@ jobs:
             work/sidekick-picker-validation.txt
             work/sidekick-picker-build.json
             work/dex-validation.txt
+            work/sidekick-runtime-validation.txt
             work/render/
             work/payload/build/test-results/testDebugUnitTest/
             work/payload/build/reports/tests/testDebugUnitTest/
           if-no-files-found: warn
+
