@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
-from unify_pixel_live_wallpaper import CATALOG, SERVICE, a, register_picker
+from unify_pixel_live_wallpaper import CATALOG, CHARACTERS, SERVICE, a, component, register_picker
 
 
 class PickerRegistrationTest(unittest.TestCase):
@@ -14,8 +14,13 @@ class PickerRegistrationTest(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / "res/values").mkdir(parents=True)
-        self.preview = self.root / "preview.png"
-        self.preview.write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+        self.preview = self.root / "thumbnails"
+        self.preview.mkdir()
+        assets = self.root / "assets/sidekick"
+        assets.mkdir(parents=True)
+        for key, _, _ in CHARACTERS:
+            (self.preview / ("sidekick_" + key + "_thumbnail.png")).write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+            (assets / ("wallpaper_" + key + ".json")).write_text("{}")
         self.manifest = self.root / "AndroidManifest.xml"
         self.manifest.write_text('''<manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="com.google.pixel.livewallpaper">
@@ -30,7 +35,6 @@ class PickerRegistrationTest(unittest.TestCase):
             <item>com.google.wallpapers.Delights</item></string-array>
             <string-array name="living_universe_service_names"><item>com.google.wallpapers.Earth</item></string-array>
             </resources>''')
-        (self.root / "assets").mkdir()
         (self.root / "assets/google.bin").write_bytes(b"existing environment")
         (self.root / "classes.dex").write_bytes(b"existing code")
 
@@ -42,7 +46,7 @@ class PickerRegistrationTest(unittest.TestCase):
         register_picker(self.root, self.preview)
         root = ET.parse(self.manifest).getroot()
         app = root.find("application")
-        self.assertEqual(self.items(self.catalog), ["com.google.wallpapers.Pokemon", "com.google.wallpapers.Delights", SERVICE])
+        self.assertEqual(self.items(self.catalog), ["com.google.wallpapers.Pokemon", "com.google.wallpapers.Delights"] + [component(cls) for _, _, cls in CHARACTERS])
         self.assertEqual(self.items(self.catalog, "living_universe_service_names"), ["com.google.wallpapers.Earth"])
         self.assertEqual(ET.tostring(app.find("service")), google_before)
         self.assertFalse(root.findall("meta-data"))
@@ -53,7 +57,7 @@ class PickerRegistrationTest(unittest.TestCase):
         wallpaper = ET.parse(self.root / "res/xml/sidekick_unified.xml").getroot()
         self.assertEqual(wallpaper.get(a("thumbnail")), "@drawable/sidekick_unified_thumbnail")
         self.assertTrue(wallpaper.get(a("description")))
-        self.assertEqual((self.root / "res/drawable-nodpi/sidekick_unified_thumbnail.png").read_bytes(), self.preview.read_bytes())
+        self.assertEqual((self.root / "res/drawable-nodpi/sidekick_unified_thumbnail.png").read_bytes(), (self.preview / "sidekick_hecker_thumbnail.png").read_bytes())
         self.assertEqual((self.root / "classes.dex").read_bytes(), b"existing code")
         self.assertEqual((self.root / "assets/google.bin").read_bytes(), b"existing environment")
 
@@ -65,10 +69,34 @@ class PickerRegistrationTest(unittest.TestCase):
         snapshots = {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()}
         register_picker(self.root, self.preview)
         self.assertEqual(snapshots, {p: p.read_bytes() for p in self.root.rglob("*") if p.is_file()})
-        self.assertEqual(self.items(localized).count(SERVICE), 1)
+        self.assertNotIn(SERVICE, self.items(localized))
+        for _, _, cls in CHARACTERS:
+            self.assertEqual(self.items(localized).count(component(cls)), 1)
         app = ET.parse(self.manifest).getroot().find("application")
         self.assertEqual(sum(s.get(a("name")) == SERVICE for s in app.findall("service")), 1)
         self.assertEqual(sum(m.get(a("name")) == "live_categories" for m in app.findall("meta-data")), 1)
+
+    def test_merged_owned_strings_and_legacy_tile_are_removed(self):
+        strings = self.root / "res/values/strings.xml"
+        strings.write_text('<resources><string name="google_title">Google</string>'
+                          '<string name="sidekick_unified_title">Old</string></resources>')
+        tree = ET.parse(self.catalog)
+        ET.SubElement(tree.getroot().find("*[@name='come_alive_service_names']"), "item").text = SERVICE
+        tree.write(self.catalog)
+        register_picker(self.root, self.preview)
+        self.assertNotIn(SERVICE, self.items(self.catalog))
+        self.assertIsNotNone(ET.parse(strings).getroot().find("*[@name='google_title']"))
+        titles = [n for p in (self.root / "res/values").glob("*.xml")
+                  for n in ET.parse(p).getroot()
+                  if n.get("name") == "sidekick_unified_title"]
+        self.assertEqual(len(titles), 1)
+
+    def test_missing_character_is_rejected_before_writing(self):
+        (self.root / "assets/sidekick/wallpaper_byte.json").unlink()
+        before = self.catalog.read_bytes()
+        with self.assertRaisesRegex(RuntimeError, "asset is missing"):
+            register_picker(self.root, self.preview)
+        self.assertEqual(self.catalog.read_bytes(), before)
 
     def test_unknown_layout_is_rejected_before_writing(self):
         self.catalog.write_text("<resources />")
@@ -79,7 +107,7 @@ class PickerRegistrationTest(unittest.TestCase):
         self.assertFalse((self.root / "res/xml").exists())
 
     def test_invalid_preview_is_rejected_before_writing(self):
-        self.preview.write_bytes(b"not a PNG")
+        (self.preview / "sidekick_byte_thumbnail.png").write_bytes(b"not a PNG")
         before = self.catalog.read_bytes()
         with self.assertRaisesRegex(RuntimeError, "existing PNG"):
             register_picker(self.root, self.preview)

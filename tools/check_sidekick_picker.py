@@ -10,7 +10,7 @@ import zipfile
 
 from apk_resource_reader import resources, xml
 from sidekick_dex import SIDEKICK, dex_index, inspect_apk, validate
-from unify_pixel_live_wallpaper import CATALOG, EXPECTED_PACKAGE, SERVICE, a
+from unify_pixel_live_wallpaper import CATALOG, CHARACTERS, EXPECTED_PACKAGE, SERVICE, a, component, owned_service
 
 
 def require(condition, message):
@@ -61,7 +61,7 @@ def hashes(apk, names):
 def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
     dex_report = validate(path)
     before_dex, _ = inspect_apk(baseline)
-    after_dex, _ = inspect_apk(path)
+    after_dex, after_classes = inspect_apk(path)
     with zipfile.ZipFile(path) as apk, zipfile.ZipFile(baseline) as old:
         manifest = xml(apk.read("AndroidManifest.xml"))
         previous = xml(old.read("AndroidManifest.xml"))
@@ -71,40 +71,54 @@ def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
         require(manifest.get("package") == EXPECTED_PACKAGE, "Unexpected wallpaper package")
         app = manifest.find("application")
         require(app is not None, "Application missing")
-        matches = [s for s in app.findall("service") if s.get(a("name")) == SERVICE]
-        require(len(matches) == 1, "Expected exactly one Sidekick service")
-        service = matches[0]
-        for key in ("enabled", "exported"):
-            require(service.get(a(key)) == "true", f"Sidekick must be {key}")
-        require(service.get(a("permission")) == "android.permission.BIND_WALLPAPER", "Wrong wallpaper permission")
-        require(any(action.get(a("name")) == "android.service.wallpaper.WallpaperService"
-                    for action in service.findall("intent-filter/action")), "Wallpaper intent missing")
-        require(scalar(table, (1, resource_id(service.get(a("label"))))).startswith("Sidekick"), "Sidekick label missing")
+        services = {s.get(a("name")): s for s in app.findall("service")}
+        required = [(component(cls), key, title) for key, title, cls in CHARACTERS]
+        required.append((SERVICE, "unified", "Sidekick collection"))
+        thumbnail_hashes = set()
+        for name, key, title in required:
+            require(sum(n.get(a("name")) == name for n in app.findall("service")) == 1,
+                    "Missing or duplicated wallpaper component: " + name)
+            service = services[name]
+            for flag in ("enabled", "exported"):
+                require(service.get(a(flag)) == "true", "Sidekick must be " + flag)
+            require(service.get(a("permission")) == "android.permission.BIND_WALLPAPER", "Wrong wallpaper permission")
+            require(any(n.get(a("name")) == "android.service.wallpaper.WallpaperService"
+                        for n in service.findall("intent-filter/action")), "Wallpaper intent missing")
+            require(scalar(table, (1, resource_id(service.get(a("label"))))) == title, "Wrong character label")
+            require("L" + name.replace(".", "/") + ";" in after_classes,
+                    "Picker component is not present in DEX: " + name)
+            metadata = [m for m in service.findall("meta-data")
+                        if m.get(a("name")) == "android.service.wallpaper"]
+            require(len(metadata) == 1, "Wallpaper metadata missing")
+            preview_file = scalar(table, (1, resource_id(metadata[0].get(a("resource")))))
+            preview = xml(apk.read(preview_file))
+            require(preview.tag == "wallpaper", "Wrong preview XML")
+            for field in ("description", "author"):
+                require(scalar(table, (1, resource_id(preview.get(a(field))))).strip(), "Preview " + field + " missing")
+            thumbnail = scalar(all_configs, (1, resource_id(preview.get(a("thumbnail")))))
+            require(apk.read(thumbnail).startswith(b"\x89PNG\r\n\x1a\n"), "Preview PNG missing")
+            if key != "unified":
+                require("assets/sidekick/wallpaper_" + key + ".json" in apk.namelist(), "Character asset missing")
+                thumbnail_hashes.add(hashlib.sha256(apk.read(thumbnail)).hexdigest())
+        require(len(thumbnail_hashes) == len(CHARACTERS), "Each character needs its own rendered thumbnail")
         categories = [m for m in app.findall("meta-data") if m.get(a("name")) == "live_categories"]
         require(len(categories) == 1, "Category metadata must be on application")
         require(not any(m.get(a("name")) == "live_categories" for m in manifest.findall("meta-data")), "Invalid manifest-level categories")
         category_id = resource_id(categories[0].get(a("resource")))
         require(category_id == named(table, "pixel_live_categories", "array")[0], "Wrong category resource")
         require("come_alive" in array(table, "pixel_live_categories"), "Come Alive category missing")
-        require(array(table, CATALOG).count(SERVICE) == 1, "Sidekick missing or duplicated in Come Alive")
+        expected = [component(cls) for _, _, cls in CHARACTERS]
+        catalog = array(table, CATALOG)
+        require([name for name in catalog if owned_service(name)] == expected,
+                "Come Alive must list each Sidekick exactly once and omit the legacy duplicate")
         require(array(table, "pixel_live_categories") == array(old_table, "pixel_live_categories"), "Google categories changed")
         for name in (CATALOG, "living_universe_service_names"):
-            require([s for s in array(table, name) if s != SERVICE]
-                    == [s for s in array(old_table, name) if s != SERVICE], f"Google catalog changed: {name}")
-        metadata = [m for m in service.findall("meta-data") if m.get(a("name")) == "android.service.wallpaper"]
-        require(len(metadata) == 1, "Wallpaper metadata missing")
-        preview_file = scalar(table, (1, resource_id(metadata[0].get(a("resource")))))
-        preview = xml(apk.read(preview_file))
-        require(preview.tag == "wallpaper", "Wrong preview XML")
-        for key in ("description", "author"):
-            require(scalar(table, (1, resource_id(preview.get(a(key))))).strip(), f"Preview {key} missing")
-        thumbnail = scalar(all_configs, (1, resource_id(preview.get(a("thumbnail")))))
-        require(apk.read(thumbnail).startswith(b"\x89PNG\r\n\x1a\n"), "Preview PNG missing")
-
+            require([s for s in array(table, name) if not owned_service(s)]
+                    == [s for s in array(old_table, name) if not owned_service(s)], f"Google catalog changed: {name}")
         before_services = {s.get(a("name")): signature(s) for s in previous.find("application").findall("service")
-                           if s.get(a("name")) != SERVICE}
+                           if not owned_service(s.get(a("name"), ""))}
         after_services = {s.get(a("name")): signature(s) for s in app.findall("service")
-                          if s.get(a("name")) != SERVICE}
+                          if not owned_service(s.get(a("name"), ""))}
         require(before_services == after_services, "Existing Google service declarations changed")
         keep = lambda name: (name.startswith(("assets/", "lib/")) and not name.endswith("/")
                              and not (allow_payload_update and name.startswith("assets/sidekick/")))
@@ -124,10 +138,10 @@ def check(path: Path, baseline: Path, allow_payload_update=False) -> str:
             new_code = hashes(apk, after_dex)
         require(old_code == new_code, "Retained wallpaper DEX bytes changed")
         sidekick_assets = {n for n in apk.namelist() if n.startswith("assets/sidekick/wallpaper_") and n.endswith(".json")}
-        require(len(sidekick_assets) >= 16, "Expected all 16 Sidekick characters")
+        require(len(sidekick_assets) == len(CHARACTERS), "Expected exactly 16 Sidekick characters")
     require(path.stat().st_size < 100 * 1024 * 1024, "APK exceeds GitHub file limit")
     return ("Picker category: Come Alive\n"
-            "Sidekick catalog entries: 1\n"
+            f"Sidekick catalog entries: {len(CHARACTERS)}\n"
             "Preview thumbnail, description and author: PASS\n"
             "Existing Google services and catalog entries: unchanged\n"
             f"Existing asset/native files with identical bytes: {len(before_names)}\n"

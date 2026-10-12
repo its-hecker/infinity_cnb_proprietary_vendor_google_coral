@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 30
     env:
       BASE_APK: proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk
-      REBUILD_PAYLOAD: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_payload || false }}
+      REBUILD_PAYLOAD: ${{ github.event_name != 'workflow_dispatch' || inputs.rebuild_payload }}
 
     steps:
       - name: Checkout vendor branch
@@ -92,11 +92,14 @@ jobs:
           set -euxo pipefail
           mkdir -p work/payload/src/main/java/com/hecker/motionsense/wallpapers
           mkdir -p work/payload/src/main/assets/sidekick
-          cp device/MotionSenseWallpapers/unified_payload/UnifiedSidekickWallpaper.java \
+          cp device/MotionSenseWallpapers/unified_payload/*.java \
             work/payload/src/main/java/com/hecker/motionsense/wallpapers/
           cp device/MotionSenseWallpapers/src/com/hecker/motionsense/wallpapers/OsloGestureClient.java \
             work/payload/src/main/java/com/hecker/motionsense/wallpapers/
           cp work/assets/sidekick/*.json work/payload/src/main/assets/sidekick/
+          mkdir -p work/payload/src/test/java/com/hecker/motionsense/wallpapers
+          cp device/MotionSenseWallpapers/unified_payload/tests/*.java \
+            work/payload/src/test/java/com/hecker/motionsense/wallpapers/
 
           cat > work/payload/settings.gradle <<'EOF'
           pluginManagement {
@@ -144,10 +147,21 @@ jobs:
                       minifyEnabled false
                   }
               }
+
+              testOptions {
+                  unitTests.includeAndroidResources = true
+                  unitTests.all {
+                      maxHeapSize = "2g"
+                      systemProperty "sidekick.render.output", file("../render").absolutePath
+                      testLogging { events "passed", "skipped", "failed"; exceptionFormat "full" }
+                  }
+              }
           }
 
           dependencies {
               implementation 'com.airbnb.android:lottie:6.6.2'
+              testImplementation 'junit:junit:4.13.2'
+              testImplementation 'org.robolectric:robolectric:4.14.1'
           }
           EOF
 
@@ -160,7 +174,7 @@ jobs:
 
           (
             cd work/payload
-            gradle --no-daemon :assembleRelease
+            gradle --no-daemon :testDebugUnitTest :assembleRelease
             PAYLOAD_APK="$(find build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
             test -n "$PAYLOAD_APK"
             cp "$PAYLOAD_APK" ../payload-release.apk
@@ -195,12 +209,12 @@ jobs:
           if [ "$REBUILD_PAYLOAD" = true ]; then
             python3 tools/unify_pixel_live_wallpaper.py \
               --decoded work/decoded \
-              --thumbnail device/MotionSenseWallpapers/res/drawable-nodpi/thumb_hecker.png \
+              --thumbnail-dir work/render/thumbnails \
               --assets work/assets/sidekick
           else
             python3 tools/unify_pixel_live_wallpaper.py \
               --decoded work/decoded \
-              --thumbnail device/MotionSenseWallpapers/res/drawable-nodpi/thumb_hecker.png \
+              --thumbnail-dir work/decoded/res/drawable-nodpi \
               --registration-only
           fi
           java -jar work/tools/apktool.jar b work/decoded -o work/staged.apk
@@ -249,9 +263,14 @@ jobs:
           import json
           import os
           import subprocess
+          import zipfile
           from pathlib import Path
 
           apk = Path("work/UnifiedPixelLiveWallpaper.apk")
+          if os.environ["REBUILD_PAYLOAD"] == "true":
+              with zipfile.ZipFile(apk) as package:
+                  for asset in Path("work/assets/sidekick").glob("*.json"):
+                      assert package.read("assets/sidekick/" + asset.name) == asset.read_bytes(), asset.name
           stamp = {
               "vendor_source_commit": os.environ["GITHUB_SHA"],
               "device_source_commit": subprocess.check_output(
@@ -272,14 +291,20 @@ jobs:
           cp work/UnifiedPixelLiveWallpaper.apk "$BASE_APK"
           cp work/sidekick-picker-validation.txt tools/sidekick-picker-validation.txt
           cp work/sidekick-picker-build.json tools/sidekick-picker-build.json
+          if [ -f work/render/render-validation.txt ]; then
+            cp work/render/render-validation.txt tools/sidekick-render-validation.txt
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add "$BASE_APK" tools/sidekick-picker-validation.txt tools/sidekick-picker-build.json
+          if [ -f tools/sidekick-render-validation.txt ]; then
+            git add tools/sidekick-render-validation.txt
+          fi
           if git diff --cached --quiet; then
             echo "No generated changes"
             exit 0
           fi
-          git commit -m "coral: register unified Sidekick in the live wallpaper picker"
+          git commit -m "coral: publish Sidekick renderer and individual character picker tiles"
           git pull --rebase origin "$BRANCH"
           git push origin "HEAD:$BRANCH"
 
@@ -293,5 +318,7 @@ jobs:
             work/sidekick-picker-validation.txt
             work/sidekick-picker-build.json
             work/dex-validation.txt
+            work/render/
+            work/payload/build/test-results/testDebugUnitTest/
+            work/payload/build/reports/tests/testDebugUnitTest/
           if-no-files-found: warn
-
