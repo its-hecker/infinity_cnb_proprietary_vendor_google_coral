@@ -1,0 +1,37 @@
+name: Check original Google live wallpapers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [features-experimental]
+    paths:
+      - '.github/workflows/pixel-wallpaper.yml'
+      - 'tools/check_pixel_wallpaper.py'
+      - 'tools/apk_resource_reader.py'
+      - 'proprietary/product/priv-app/PixelLiveWallpaper/**'
+      - 'Android.bp'
+      - 'coral-vendor.mk'
+  pull_request:
+    branches: [features-experimental]
+    paths:
+      - '.github/workflows/pixel-wallpaper.yml'
+      - 'tools/check_pixel_wallpaper.py'
+      - 'tools/apk_resource_reader.py'
+      - 'proprietary/product/priv-app/PixelLiveWallpaper/**'
+      - 'Android.bp'
+      - 'coral-vendor.mk'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    if: github.ref == 'refs/heads/features-experimental' || github.base_ref == 'features-experimental'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original APK and absence of custom Sidekick content
+        run: python3 tools/check_pixel_wallpaper.py
