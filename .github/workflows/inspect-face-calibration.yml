@@ -1,0 +1,51 @@
+name: Inspect stock Face ID calibration dependency
+
+on:
+  push:
+    branches: [features-experimental]
+    paths: [".github/workflows/inspect-face-calibration.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the calibration blob from the matching stock build
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          STOCK="https://raw.githubusercontent.com/leddaz-dump-stash/google_coral_dump/18b199b6caa97af88be5b5f99abae6dc1a3a4523"
+          curl -fL --retry 3 "$STOCK/vendor/build.prop" -o work/stock-build.prop
+          grep -Fx "ro.vendor.build.fingerprint=google/coral/coral:13/TP1A.221005.002.B2/9382335:user/release-keys" work/stock-build.prop
+          curl -fL --retry 3 "$STOCK/vendor/lib64/libautocalsolvers.so" -o work/libautocalsolvers.so
+          curl -fL --retry 3 "$STOCK/vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google" -o work/stock-face-hal
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          data = Path("work/libautocalsolvers.so").read_bytes()
+          digest = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+          assert digest == "c2fdf209a1c63f7c8c69bbca85c0b0b7f2fd253c", digest
+          print("Calibration Git blob:", digest)
+          print("Calibration SHA256:", hashlib.sha256(data).hexdigest())
+          PY
+      - name: Inspect ELF dependencies and calibration exports
+        run: |
+          set -euo pipefail
+          readelf -Wh work/libautocalsolvers.so > work/calibration-elf.txt
+          readelf -Wd work/libautocalsolvers.so >> work/calibration-elf.txt
+          readelf -Wn work/libautocalsolvers.so >> work/calibration-elf.txt
+          readelf -Ws work/libautocalsolvers.so | c++filt > work/calibration-symbols.txt
+          readelf -Wn work/stock-face-hal > work/stock-face-buildid.txt
+          readelf -Wn proprietary/vendor/bin/hw/android.hardware.biometrics.face@1.0-service.google > work/current-face-buildid.txt
+          readelf -Wd proprietary/vendor/lib64/android.hardware.keymaster@4.1-impl.nos.so > work/keymaster-dependencies.txt
+          cat work/calibration-elf.txt work/stock-face-buildid.txt work/current-face-buildid.txt work/keymaster-dependencies.txt
+      - name: Upload inspected calibration blob
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-face-calibration
+          path: work/
