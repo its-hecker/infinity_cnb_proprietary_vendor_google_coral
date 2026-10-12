@@ -1,7 +1,7 @@
 {
-  "vendor_source_commit": "bf4447fb5851ae67af353cecd867fa9bf8af35af",
-  "device_source_commit": "38297178c635716c262b241040f610b7e22d18a3",
+  "vendor_source_commit": "346feb035b0b8858a34604c0f98595d2e886f441",
+  "device_source_commit": "51909ef4c56774b19e40b1f1726022d4aa4b6ad5",
   "payload_rebuilt": true,
-  "apk_sha256": "ed4bdaa72c9a7042fa4c8c6acbd697d6053a70899149a9840d09efad60acc1c9",
-  "apk_bytes": 93708923
+  "apk_sha256": "7664998701e80bd1287cbd7f6d221d80614853d7206b6aaad32449ef8708e907",
+  "apk_bytes": 93782651
 }

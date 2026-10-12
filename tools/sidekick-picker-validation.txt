@@ -1,6 +1,7 @@
 Picker category: Come Alive
 Sidekick catalog entries: 16
 Preview thumbnail, description and author: PASS
+Scene lighting preserves background alpha: PASS
 Existing Google services and catalog entries: unchanged
 Existing asset/native files with identical bytes: 198
 Retained DEX files with identical bytes: 2
@@ -10,5 +11,5 @@ Class definitions: 9119
 Duplicate class definitions: 0
 Sidekick service: classes3.dex
 Oslo client: classes3.dex
-APK bytes: 93708923
+APK bytes: 93782651
 Validation: PASS
