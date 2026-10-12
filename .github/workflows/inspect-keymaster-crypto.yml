@@ -1,9 +1,9 @@
-name: Inspect Keymaster legacy crypto ABI
+name: Validate Keymaster legacy crypto binding
 
 on:
   push:
     branches: [features-experimental]
-    paths: [".github/workflows/inspect-keymaster-crypto.yml"]
+    paths: [".github/workflows/inspect-keymaster-crypto.yml", "tools/check_keymaster_crypto.py", "tools/keymaster_elf.py"]
   workflow_dispatch:
 
 permissions:
@@ -15,13 +15,16 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Retrieve the installed compatibility library and ELF tooling
+      - name: Checkout matching device branch
+        uses: actions/checkout@v4
+        with:
+          repository: its-hecker/infinity_cnb_android_device_google_coral
+          ref: ${{ github.ref_name }}
+          path: device
+      - name: Retrieve pinned compatibility library and pre-fix baselines
         run: |
           set -euo pipefail
           mkdir -p work
-          sudo apt-get update -qq
-          sudo apt-get install -y patchelf
-          cp /usr/bin/patchelf work/patchelf
           curl -fL --retry 3 \
             https://raw.githubusercontent.com/LineageOS/android_hardware_lineage_compat/8d1f79edefa48fd848b3e306fc7361fb944041b3/vndk/v33/arm64/libcrypto-v33.so \
             -o work/libcrypto-v33.so
@@ -33,6 +36,24 @@ jobs:
           assert digest == "e99fe843b8f7b1aa3937d85b1bdb91cc84cae951", digest
           print("Compatibility Git blob:", digest)
           PY
+      - name: Fetch pre-fix Keymaster binaries
+        run: |
+          set -euo pipefail
+          BASE="https://raw.githubusercontent.com/its-hecker/infinity_cnb_proprietary_vendor_google_coral/bcf78a5afac3194ed1505b8f1dbd462603f4f718/proprietary/vendor"
+          curl -fL --retry 3 "$BASE/bin/hw/android.hardware.keymaster@4.1-service.citadel" -o work/keymaster-service.before
+          curl -fL --retry 3 "$BASE/lib64/android.hardware.keymaster@4.1-impl.nos.so" -o work/keymaster-impl.before
+      - name: Verify direct crypto bindings and unchanged code
+        run: |
+          set -euo pipefail
+          python3 tools/check_keymaster_crypto.py \
+            --service proprietary/vendor/bin/hw/android.hardware.keymaster@4.1-service.citadel \
+            --impl proprietary/vendor/lib64/android.hardware.keymaster@4.1-impl.nos.so \
+            --before-service work/keymaster-service.before \
+            --before-impl work/keymaster-impl.before \
+            --crypto work/libcrypto-v33.so \
+            --device-root device \
+            --report work/keymaster-crypto-validation.txt
+          python3 -m py_compile device/coral/extract-files.py
       - name: Inspect crypto symbols and Keymaster dependencies
         run: |
           set -euo pipefail
@@ -47,5 +68,9 @@ jobs:
           cat work/crypto-elf.txt work/service-dependencies.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: keymaster-crypto-inspection
-          path: work/
+          name: keymaster-crypto-validation
+          path: |
+            work/keymaster-crypto-validation.txt
+            work/crypto-elf.txt
+            work/impl-dependencies.txt
+            work/service-dependencies.txt

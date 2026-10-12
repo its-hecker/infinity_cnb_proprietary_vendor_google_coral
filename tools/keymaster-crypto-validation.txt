@@ -1,0 +1,13 @@
+Service first dependency: libcrypto-v33.so
+NOS implementation crypto dependency: libcrypto-v33.so
+NOS modern crypto/shim dependencies: removed
+Crypto imports provided by v33: 47/47
+Compatibility Git blob: e99fe843b8f7b1aa3937d85b1bdb91cc84cae951
+Service/implementation executable mappings: unchanged
+Code, constants, call stubs, unwind data and build IDs: unchanged
+Dynamic symbol names, types and addresses: unchanged
+Init service identity and groups: unchanged
+Build/install/extraction entries: PASS
+Service SHA256: 586e01fcc6af409d0aafe1fe130ee5f67468b27fc11206de4364f117d4887214
+Implementation SHA256: eec5e6a6e33ed9e0eb3d83c1b2dfd444ac1f9a73e965ae72dfe4ae93b2720fb3
+Validation: PASS (ELF/source checks; phone runtime verification required)

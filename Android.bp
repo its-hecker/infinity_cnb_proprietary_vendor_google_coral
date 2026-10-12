@@ -16204,7 +16204,6 @@ cc_prebuilt_library_shared {
                 "proprietary/vendor/lib64/android.hardware.keymaster@4.1-impl.nos.so",
             ],
             shared_libs: [
-                "libcrypto_shim",
                 "libbase",
                 "libnos",
                 "libnosprotos",
@@ -16212,7 +16211,7 @@ cc_prebuilt_library_shared {
                 "android.hardware.keymaster@4.0",
                 "android.hardware.keymaster@4.1",
                 "libkeymaster4support",
-                "libcrypto",
+                "libcrypto-v33",
                 "libprotobuf-cpp-full-3.9.1-vendorcompat",
                 "nos_app_keymaster",
                 "libhidlbase",
@@ -22439,6 +22438,7 @@ cc_prebuilt_binary {
                 "proprietary/vendor/bin/hw/android.hardware.keymaster@4.1-service.citadel",
             ],
             shared_libs: [
+                "libcrypto-v33",
                 "libbase",
                 "libhidlbase",
                 "libnos",
