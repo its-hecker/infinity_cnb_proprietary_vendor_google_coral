@@ -1,0 +1,12 @@
+Stock build: coral TP1A.221005.002.B2 / 9382335
+Calibration Git blob: c2fdf209a1c63f7c8c69bbca85c0b0b7f2fd253c
+Calibration SHA256: d7b090b95f01d707b1be17f3a0db070bf84d8f7598a814d0bb6e17a18372891a
+Calibration bytes: 5622064
+Autocalibrate default export: PASS
+Calibration dependencies: libc, libdl, liblog, libm, libz
+Stock SONAME preserved: libautocalsolvers.so-Wl
+Face HAL stock/packaged build ID: c71b3e23670c561613fd4aa655bcdfdc
+Face HAL executable bytes: identical to stock
+Legacy camera and callback ABI bindings: PASS
+Vendor install and device extraction entries: PASS
+Validation: PASS (packaging/ELF checks; phone enrollment still required)
