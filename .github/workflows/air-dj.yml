@@ -1,7 +1,7 @@
-name: Package experimental Motion Lab
+name: Package Motion Lab
 on:
   push:
-    branches: [cnb-Latest-stable, features-experimental]
+    branches: [cnb-Latest-stable]
     paths: ['.github/workflows/air-dj.yml']
   workflow_dispatch:
 permissions:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    if: (github.ref == 'refs/heads/cnb-Latest-stable' || github.ref == 'refs/heads/features-experimental')
+    if: github.ref == 'refs/heads/cnb-Latest-stable'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -58,10 +58,10 @@ jobs:
           test -s "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/LabGlowRenderer.smali"
           test ! -e "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/AlbumArtController.smali"
           test ! -e "$RUNNER_TEMP/airdj-verify/smali/com/google/oslo/ArtworkPalette.smali"
-      - name: Store validated plugin on the feature branch
+      - name: Store validated plugin on the stable branch
         run: |
           set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/features-experimental
+          test "$GITHUB_REF" = refs/heads/cnb-Latest-stable
           APK=proprietary/system_ext/priv-app/OsloFeedback/OsloFeedback.apk
           cp "$RUNNER_TEMP/OsloFeedback-MotionLab-validation.apk" "$APK"
           printf 'Motion Sense + Air DJ source: %s\nAPK SHA256: %s\n' \
@@ -71,8 +71,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add "$APK" tools/air-dj-build.txt
           if ! git diff --cached --quiet; then
-            git commit -m 'coral: package validated experimental Motion Lab plugin'
-            git push origin HEAD:features-experimental
+            git commit -m 'coral: package validated Motion Lab plugin'
+            git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
       - uses: actions/upload-artifact@v4
         with:
