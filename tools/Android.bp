@@ -1,9 +1,9 @@
-// Manifest-only registration of the Pokemon renderer already bundled by Google.
+// Remove the incompatible Pokemon renderer while preserving the other Google wallpapers.
 python_binary_host {
-    name: "coral_enable_google_pokemon_wallpaper",
-    main: "enable_google_pokemon_wallpaper.py",
+    name: "coral_strip_google_pokemon_wallpaper",
+    main: "strip_google_pokemon_wallpaper.py",
     srcs: [
-        "enable_google_pokemon_wallpaper.py",
+        "strip_google_pokemon_wallpaper.py",
         "apk_resource_reader.py",
     ],
 }

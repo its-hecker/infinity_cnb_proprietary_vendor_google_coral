@@ -1,7 +1,7 @@
 name: Package experimental Motion Lab
 on:
   push:
-    branches: [features-experimental]
+    branches: [cnb-Latest-stable, features-experimental]
     paths: ['.github/workflows/air-dj.yml']
   workflow_dispatch:
 permissions:
@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
-    if: github.ref == 'refs/heads/features-experimental'
+    if: (github.ref == 'refs/heads/cnb-Latest-stable' || github.ref == 'refs/heads/features-experimental')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

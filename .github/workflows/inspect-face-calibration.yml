@@ -2,7 +2,7 @@ name: Restore stock Face ID calibration dependency
 
 on:
   push:
-    branches: [features-experimental]
+    branches: [cnb-Latest-stable, features-experimental]
     paths: [".github/workflows/inspect-face-calibration.yml", "tools/check_face_calibration.py"]
   workflow_dispatch:
 

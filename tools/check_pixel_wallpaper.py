@@ -11,7 +11,7 @@ import sys
 import zipfile
 
 from apk_resource_reader import xml
-from enable_google_pokemon_wallpaper import check_enabled_apk
+from strip_google_pokemon_wallpaper import check_stripped_apk
 
 ROOT = Path(__file__).resolve().parents[1]
 APK = ROOT / "proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk"
@@ -75,13 +75,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("apk", nargs="?", type=Path, default=APK)
     parser.add_argument("--report", type=Path)
-    parser.add_argument("--enabled", type=Path,
-                        help="Also verify a generated APK with Google Pokemon enabled")
+    parser.add_argument("--without-pokemon", type=Path,
+                        help="Also verify a generated APK with Pokemon removed")
     args = parser.parse_args()
     try:
         report = check(args.apk)
-        if args.enabled:
-            report += check_enabled_apk(args.apk, args.enabled)
+        if args.without_pokemon:
+            report += check_stripped_apk(args.apk, args.without_pokemon)
     except (ValueError, OSError, zipfile.BadZipFile) as error:
         print(f"Validation: FAIL: {error}", file=sys.stderr)
         raise SystemExit(1)

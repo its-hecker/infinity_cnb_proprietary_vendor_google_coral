@@ -2,7 +2,7 @@ name: Validate Keymaster legacy crypto binding
 
 on:
   push:
-    branches: [features-experimental]
+    branches: [cnb-Latest-stable, features-experimental]
     paths: [".github/workflows/inspect-keymaster-crypto.yml", "tools/check_keymaster_crypto.py", "tools/keymaster_elf.py"]
   workflow_dispatch:
 

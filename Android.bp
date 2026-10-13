@@ -24022,17 +24022,17 @@ android_app_import {
 
 
 genrule {
-    name: "coral_google_pokemon_wallpaper_apk",
-    tools: ["coral_enable_google_pokemon_wallpaper"],
+    name: "coral_google_wallpapers_without_pokemon_apk",
+    tools: ["coral_strip_google_pokemon_wallpaper"],
     srcs: ["proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk"],
     out: ["PixelLiveWallpaper.apk"],
-    cmd: "$(location coral_enable_google_pokemon_wallpaper) --input $(in) --output $(out)",
+    cmd: "$(location coral_strip_google_pokemon_wallpaper) --input $(in) --output $(out)",
 }
 
 android_app_import {
     name: "PixelLiveWallpaper",
     owner: "google",
-    apk: ":coral_google_pokemon_wallpaper_apk",
+    apk: ":coral_google_wallpapers_without_pokemon_apk",
     certificate: "platform",
     dex_preopt: {
         enabled: false,

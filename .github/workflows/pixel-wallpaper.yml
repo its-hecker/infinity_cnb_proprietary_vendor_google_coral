@@ -1,14 +1,14 @@
-name: Check bundled Google Pokemon wallpaper
+name: Check Google wallpapers without Sidekick
 
 on:
   workflow_dispatch:
   push:
-    branches: [features-experimental]
+    branches: [cnb-Latest-stable, features-experimental]
     paths:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
-      - 'tools/enable_google_pokemon_wallpaper.py'
-      - 'tools/test_google_pokemon_registration.py'
+      - 'tools/strip_google_pokemon_wallpaper.py'
+      - 'tools/test_google_pokemon_removal.py'
       - 'tools/Android.bp'
       - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
@@ -16,12 +16,12 @@ on:
       - 'Android.bp'
       - 'coral-vendor.mk'
   pull_request:
-    branches: [features-experimental]
+    branches: [cnb-Latest-stable, features-experimental]
     paths:
       - '.github/workflows/pixel-wallpaper.yml'
       - 'tools/check_pixel_wallpaper.py'
-      - 'tools/enable_google_pokemon_wallpaper.py'
-      - 'tools/test_google_pokemon_registration.py'
+      - 'tools/strip_google_pokemon_wallpaper.py'
+      - 'tools/test_google_pokemon_removal.py'
       - 'tools/Android.bp'
       - 'tools/PIXEL_WALLPAPER.md'
       - 'tools/apk_resource_reader.py'
@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   check:
-    if: github.ref == 'refs/heads/features-experimental' || github.base_ref == 'features-experimental'
+    if: (github.ref == 'refs/heads/cnb-Latest-stable' || github.ref == 'refs/heads/features-experimental') || (github.base_ref == 'cnb-Latest-stable' || github.base_ref == 'features-experimental')
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -47,15 +47,15 @@ jobs:
           python-version: '3.12'
       - name: Verify original APK and absence of custom Sidekick content
         run: python3 tools/check_pixel_wallpaper.py
-      - name: Check Pokemon identifier, fused-module and Oslo permission regressions
-        run: python3 -m unittest discover -s tools -p test_google_pokemon_registration.py
-      - name: Enable bundled Google Pokemon and verify unchanged payload
+      - name: Check Pokemon removal regressions
+        run: python3 -m unittest discover -s tools -p test_google_pokemon_removal.py
+      - name: Remove Pokemon and verify the remaining Google payload
         run: |
-          python3 tools/enable_google_pokemon_wallpaper.py \
+          python3 tools/strip_google_pokemon_wallpaper.py \
             --input proprietary/product/priv-app/PixelLiveWallpaper/PixelLiveWallpaper.apk \
             --output "$RUNNER_TEMP/PixelLiveWallpaper.apk"
           python3 tools/check_pixel_wallpaper.py \
-            --enabled "$RUNNER_TEMP/PixelLiveWallpaper.apk"
+            --without-pokemon "$RUNNER_TEMP/PixelLiveWallpaper.apk"
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
