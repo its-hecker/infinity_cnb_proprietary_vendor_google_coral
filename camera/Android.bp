@@ -1,0 +1,23 @@
+// Original Google-signed stock Camera, retained as a split APK installation.
+package {
+    default_applicable_licenses: ["coral_google_camera_license"],
+}
+
+license {
+    name: "coral_google_camera_license",
+    license_kinds: ["legacy_proprietary"],
+}
+
+genrule {
+    name: "coral_google_camera_apk_set",
+    srcs: ["prebuilt/GoogleCameraCoral.apks.*"],
+    out: ["GoogleCameraCoral.apks"],
+    cmd: "cat $(in) > $(out)",
+}
+
+android_app_set {
+    name: "GoogleCameraCoral",
+    owner: "google",
+    set: ":coral_google_camera_apk_set",
+    product_specific: true,
+}

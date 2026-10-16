@@ -1,0 +1,75 @@
+{
+  "package": "com.google.android.GoogleCamera",
+  "version_name": "8.7.250.494820638.44",
+  "version_code": 65822832,
+  "signer_sha256": "f0fd6c5b410f25cb25c3b53346c8972fae30f8ee7411df910480ad6b2d60db83",
+  "source_url": "https://www.apkmirror.com/apk/google-inc/camera/camera-8-7-250-494820638-44-release/google-camera-8-7-250-494820638-44-android-apk-download/",
+  "source_sha256": "ca188568c11676d0a187d5972cf498e01481e5898ff6ddb8041ac935c61cfd3a",
+  "files": {
+    "base.apk": {
+      "size": 23732304,
+      "sha256": "290080b660b2f3897d4c1c15b5efa98f2facc5a3d3cf78c0ea6a4ff90d2a8d94"
+    },
+    "split_camera_cheetah_system_software_releasekeys_asset_module.apk": {
+      "size": 69988820,
+      "sha256": "10f3b561bad9cdc79e1584c8ee9688f251cda80b79fde2f91b15a4deb31178c0"
+    },
+    "split_camera_cheetah_system_software_testkeys_asset_module.apk": {
+      "size": 70201809,
+      "sha256": "cdc8f9dedf7aefa3fe4fbfd0007e7fcf4e81631148aca7d8644a0c4eca72e25c"
+    },
+    "split_camera_vkp_asset_module.apk": {
+      "size": 2781988,
+      "sha256": "19c43ba2e6353b7358be11a75edadb74df98ccbcd81c967fbc256db260a89abe"
+    },
+    "split_deeprestore_split_module.apk": {
+      "size": 26403180,
+      "sha256": "662d89114f6e108015fe1091a508c7f753fe4c3779fbab24c3a69cf33cd8ec5d"
+    },
+    "split_hdrplus_asset_module_p21.apk": {
+      "size": 164296,
+      "sha256": "096da64cc9f90ad9f578f21ebcc86feaa182afcaf3e9f4a39ea98e525721d576"
+    },
+    "split_hdrplus_asset_module_p22.apk": {
+      "size": 6550052,
+      "sha256": "c14f4c50d92ce7de5f132d537e61bd84124b736f1cf6850dec00024fb2420793"
+    },
+    "split_imax_split_module.apk": {
+      "size": 3559784,
+      "sha256": "5742ac814fa2317374943b492623e24673b5753c68c4e836e62181c87febeb21"
+    },
+    "split_l2l_asset_module.apk": {
+      "size": 14504501,
+      "sha256": "7d93eee1cde651d0ed910233a4af720b7633d7228b4eb811242c794ccb935c15"
+    },
+    "split_lightcycle_asset_module.apk": {
+      "size": 3301739,
+      "sha256": "c5099118a54bb91f2ed704257872827afda589a8ac46ab75dc56a20cda954a87"
+    },
+    "split_motion_blur_asset_module_p21.apk": {
+      "size": 10220093,
+      "sha256": "4cc9c2bea419f3d87201b0a3792a246c6b929a2c450d5a822bd7cd6dd06a0c06"
+    },
+    "split_motion_blur_asset_module_p22.apk": {
+      "size": 11825755,
+      "sha256": "c4bf956a3fc2a77a1bb77ae010c6a3b4ce98d0ff81f428edc1eb9949c99987f3"
+    },
+    "split_portrait_asset_module.apk": {
+      "size": 28861824,
+      "sha256": "8b6796a9df37b80e94c6e10932cdc3f8a1e034afff4867291ea0b9d1e22afcb6"
+    },
+    "split_smartcapture_split_module.apk": {
+      "size": 16703860,
+      "sha256": "b3dcfaf61fc8b4b0bf438101743a5aeb7fc7c277f040cb1cf6c06618f27cb4a7"
+    },
+    "split_smartzoom_split_module.apk": {
+      "size": 3187063,
+      "sha256": "235ddc96be2d0febbe996dcdbcbc07a7c7c0c05c6d0e35d13040bf0d11361e9a"
+    },
+    "split_startup_jni_split_module.apk": {
+      "size": 126513515,
+      "sha256": "f692789988a1d89df121b9e284980a60f5af608d75d0cf5def3d3dde86e6941a"
+    }
+  },
+  "download_url": "https://downloadr2.apkmirror.com/wp-content/uploads/2022/12/20/63991baa41a6f/com.google.android.GoogleCamera_8.7.250.494820638.44-65822832_15feat_4bb7d3831a4a6f48c012756955e7dd7e_apkmirror.com.apkm"
+}

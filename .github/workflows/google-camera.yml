@@ -1,0 +1,45 @@
+name: Verify coral Google Camera
+
+on:
+  push:
+    branches: [cnb-Latest-stable, gcam-experimental]
+    paths:
+      - 'camera/**'
+      - '.github/workflows/google-camera.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coral-google-camera-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  camera:
+    if: github.ref == 'refs/heads/cnb-Latest-stable' || github.ref == 'refs/heads/gcam-experimental'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            camera
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$ANDROID_HOME/build-tools/35.0.0"
+          if [[ ! -x "$tools/aapt2" || ! -x "$tools/apksigner" ]]; then
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;35.0.0'
+          fi
+          echo "$tools" >> "$GITHUB_PATH"
+      - name: Verify every packaged APK and the complete install set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 camera/tools/prepare_camera.py --check
