@@ -1,0 +1,65 @@
+name: Verify coral Google Camera
+
+on:
+  push:
+    branches: [gcam-experimental]
+    paths:
+      - 'camera/**'
+      - '.github/workflows/google-camera.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coral-google-camera-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  camera:
+    if: github.ref == 'refs/heads/gcam-experimental'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: gcam-experimental
+          sparse-checkout: |
+            camera
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set Android build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          tools="$ANDROID_HOME/build-tools/35.0.0"
+          if [[ ! -x "$tools/aapt2" || ! -x "$tools/apksigner" ]]; then
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;35.0.0'
+          fi
+          echo "$tools" >> "$GITHUB_PATH"
+      - name: Import pinned signed source when no payload is committed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f camera/prebuilt/payload.json ]]; then
+            python3 camera/tools/prepare_camera.py --download
+          fi
+      - name: Verify every packaged APK and the complete install set
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 camera/tools/prepare_camera.py --check | tee camera/validation.txt
+      - name: Commit verified payload only to the experimental branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git branch --show-current)" == gcam-experimental ]]
+          git add camera/prebuilt camera/validation.txt
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'coral: import verified Google Camera 8.7.250 signed APK set'
+            git push origin HEAD:refs/heads/gcam-experimental
+          fi
