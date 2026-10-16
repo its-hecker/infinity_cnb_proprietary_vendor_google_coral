@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: coral-google-camera-${{ github.ref }}
@@ -39,27 +39,8 @@ jobs:
             "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'build-tools;35.0.0'
           fi
           echo "$tools" >> "$GITHUB_PATH"
-      - name: Import pinned signed source when no payload is committed
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! -f camera/prebuilt/payload.json ]]; then
-            python3 camera/tools/prepare_camera.py --download --download-url 'https://eb5e7388c3df147b74dd2379b7cf8323.r2.cloudflarestorage.com/downloadprod/wp-content/uploads/2022/12/20/63991baa41a6f/com.google.android.GoogleCamera_8.7.250.494820638.44-65822832_15feat_4bb7d3831a4a6f48c012756955e7dd7e_apkmirror.com.apkm?X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=72a5ba3a0b8a601e535d5525f12f8177%2F20261016%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261016T024921Z&X-Amz-SignedHeaders=host&X-Amz-Expires=3600&X-Amz-Signature=6e8d8266ea67f1c91ee3afc4fe43db6b7ac403458d885b4a8378955dff857de5'
-          fi
       - name: Verify every packaged APK and the complete install set
         shell: bash
         run: |
           set -euo pipefail
-          python3 camera/tools/prepare_camera.py --check | tee camera/validation.txt
-      - name: Commit verified payload only to the experimental branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$(git branch --show-current)" == gcam-experimental ]]
-          git add camera/prebuilt camera/validation.txt
-          if ! git diff --cached --quiet; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git commit -m 'coral: import verified Google Camera 8.7.250 signed APK set'
-            git push origin HEAD:refs/heads/gcam-experimental
-          fi
+          python3 camera/tools/prepare_camera.py --check

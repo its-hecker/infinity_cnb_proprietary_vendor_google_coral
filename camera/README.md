@@ -41,11 +41,11 @@ python3 camera/tools/prepare_camera.py --input /path/to/original-camera.apkm
 python3 camera/tools/prepare_camera.py --check
 ```
 
-`--download` resolves APKMirror's current download link for that exact release,
-then rejects any source whose hash differs. This is only needed when rebuilding
-the committed payload. If the hosting page changes, supply the original bundle
-with `--input`. The branch-limited import workflow can populate the payload once;
-subsequent builds use the committed files.
+`--download` fetches the pinned release from APKMirror's public CDN and rejects
+any source whose hash differs. This is only needed when rebuilding the committed
+payload. If hosting blocks an automated download, supply the original bundle
+with `--input`. The payload is already committed; the verification workflow is
+read-only and does not download Camera from an external site.
 
 Build instructions live in the matching local-manifest branch at
 `docs/GCAM_EXPERIMENTAL.md`.

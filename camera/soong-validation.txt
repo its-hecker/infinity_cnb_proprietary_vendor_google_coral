@@ -1,0 +1,9 @@
+PASS: actual ProjectInfinity-X/17 Soong extract_apks installation check
+Soong commit: 9191d76287f748231c98c3e4c1214a0c0cc62f28
+SDK: 37; ABIs: ARM64_V8A,ARMEABI_V7A; screen densities: all
+Install stem: GoogleCameraCoral; partition: product
+Base and 9 feature APKs: byte-for-byte SHA-256 equality with original Google release
+All emitted apkcerts entries: certificate=PRESIGNED; no private key
+Full Android ROM build and physical-device testing: pending
+
+Base SHA-256: 290080b660b2f3897d4c1c15b5efa98f2facc5a3d3cf78c0ea6a4ff90d2a8d94
