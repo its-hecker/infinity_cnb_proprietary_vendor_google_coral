@@ -72,6 +72,9 @@ def verify_apk(path, name, lock, aapt2, apksigner):
     expected = lock["files"][name]
     if path.stat().st_size != expected["size"] or digest(path) != expected["sha256"]:
         raise ValueError(f"APK bytes differ from the pinned Google release: {name}")
+    if aapt2 is None and apksigner is None:
+        print(f"Verified pinned APK SHA-256: {name}", flush=True)
+        return
     result = subprocess.run(
         [apksigner, "verify", "--print-certs", str(path)],
         text=True, capture_output=True, check=True)
@@ -99,10 +102,17 @@ def verify_apk(path, name, lock, aapt2, apksigner):
     print(f"Verified Google signature, manifest and SHA-256: {name}", flush=True)
 
 
-def download_bundle(lock, target):
+def download_bundle(lock, target, direct_url=None):
     opener = urllib.request.build_opener(
         urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     opener.addheaders = [("User-Agent", "Mozilla/5.0")]
+    direct_url = direct_url or lock.get("download_url")
+    if direct_url:
+        with opener.open(direct_url, timeout=120) as response, target.open("wb") as stream:
+            shutil.copyfileobj(response, stream)
+        if digest(target) != lock["source_sha256"]:
+            raise ValueError("Downloaded bundle differs from pinned source; refusing import")
+        return
     with opener.open(lock["source_url"], timeout=60) as response:
         page = response.read().decode()
     match = re.search(r'href="([^"<>]*download/\?key=[^"<>]*)"', page)
@@ -202,20 +212,22 @@ def main():
     action.add_argument("--input", type=Path, help="Original APKMirror .apkm")
     action.add_argument("--download", action="store_true")
     action.add_argument("--check", action="store_true", help="Verify the committed payload")
+    action.add_argument("--check-hashes", action="store_true", help="Verify pinned bytes without SDK tools")
+    parser.add_argument("--download-url", help="Direct public download URL for the pinned original bundle")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "prebuilt")
     parser.add_argument("--aapt2", default="aapt2")
     parser.add_argument("--apksigner", default="apksigner")
     args = parser.parse_args()
     lock = json.loads((ROOT / "source.json").read_text())
     tools = (args.aapt2, args.apksigner)
-    if args.check:
-        check_payload(args.output_dir, lock, tools)
+    if args.check or args.check_hashes:
+        check_payload(args.output_dir, lock, (None, None) if args.check_hashes else tools)
     elif args.input:
         import_bundle(args.input, args.output_dir, lock, tools)
     else:
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "camera.apkm"
-            download_bundle(lock, source)
+            download_bundle(lock, source, args.download_url)
             import_bundle(source, args.output_dir, lock, tools)
 
 
