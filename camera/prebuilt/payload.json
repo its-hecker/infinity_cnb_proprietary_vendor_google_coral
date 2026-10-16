@@ -1,0 +1,29 @@
+{
+  "archive_sha256": "e1ad25c00bc0e712069f69ed3105bc69450e90236424dd45106081054b2086bd",
+  "files": [
+    "base.apk",
+    "split_camera_vkp_asset_module.apk",
+    "split_deeprestore_split_module.apk",
+    "split_imax_split_module.apk",
+    "split_l2l_asset_module.apk",
+    "split_lightcycle_asset_module.apk",
+    "split_portrait_asset_module.apk",
+    "split_smartcapture_split_module.apk",
+    "split_smartzoom_split_module.apk",
+    "split_startup_jni_split_module.apk"
+  ],
+  "chunks": {
+    "GoogleCameraCoral.apks.00": {
+      "size": 67108864,
+      "sha256": "41691074ffafbcd447ae55fccced41abd4dfd6f2f7ff2d0b0a3d1c7d20b443e5"
+    },
+    "GoogleCameraCoral.apks.01": {
+      "size": 67108864,
+      "sha256": "bcd1a737292b12ca8286163753cfdf96e6a675878e3c28e71075ca11ec6bf55a"
+    },
+    "GoogleCameraCoral.apks.02": {
+      "size": 39864603,
+      "sha256": "0af48cc831cc2bf71d708eeac44534732e6d4d395c29dc611c5090fcc7f91ad2"
+    }
+  }
+}

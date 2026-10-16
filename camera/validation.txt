@@ -1,0 +1,11 @@
+Verified Google signature, manifest and SHA-256: base.apk
+Verified Google signature, manifest and SHA-256: split_camera_vkp_asset_module.apk
+Verified Google signature, manifest and SHA-256: split_deeprestore_split_module.apk
+Verified Google signature, manifest and SHA-256: split_imax_split_module.apk
+Verified Google signature, manifest and SHA-256: split_l2l_asset_module.apk
+Verified Google signature, manifest and SHA-256: split_lightcycle_asset_module.apk
+Verified Google signature, manifest and SHA-256: split_portrait_asset_module.apk
+Verified Google signature, manifest and SHA-256: split_smartcapture_split_module.apk
+Verified Google signature, manifest and SHA-256: split_smartzoom_split_module.apk
+Verified Google signature, manifest and SHA-256: split_startup_jni_split_module.apk
+PASS: Camera 8.7.250.494820638.44, base + 9 splits
